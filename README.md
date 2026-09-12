@@ -2,7 +2,7 @@
 
 An enterprise-style internal engineering service desk: users raise incidents, engineers triage and resolve them, admins manage the platform — with an optional AI-assisted analysis service (classification, summarisation, keyword extraction, suggested troubleshooting steps) sitting alongside the core workflow, not at the centre of it.
 
-> **Status: Phase 4 of 16 — Spring Boot backend skeleton.**
+> **Status: Phase 5 of 16 — authentication and RBAC.**
 > The application does not yet do anything. See [`docs/decisions/`](docs/decisions) for the reasoning behind key choices and the phase-by-phase build log in commit history.
 
 ## Why this project exists
@@ -68,6 +68,7 @@ Non-obvious design choices are recorded as Architecture Decision Records in [`do
 - [ADR-0005](docs/decisions/0005-two-pipeline-ci-cd.md) — Two-pipeline CI/CD split (PR verification vs main deployment)
 - [ADR-0006](docs/decisions/0006-check-constraints-over-native-enums.md) — CHECK constraints over native Postgres enum types
 - [ADR-0007](docs/decisions/0007-manual-mappers-over-mapstruct.md) — Manual mapper methods over MapStruct
+- [ADR-0008](docs/decisions/0008-jwt-refresh-token-strategy.md) — Opaque Redis-backed refresh tokens + manual credential verification
 
 ## Running the backend locally
 
@@ -79,22 +80,29 @@ cd backend
 mvn spring-boot:run
 ```
 
-The app boots on `:8080`. Flyway applies all migrations automatically on startup. Try:
+The app boots on `:8080`. Flyway applies all migrations automatically on startup. Every endpoint except `/api/v1/auth/**`, `/actuator/health`, and the Swagger UI now requires a valid JWT — try the full flow:
 
 ```bash
-curl http://localhost:8080/api/v1/categories
-curl http://localhost:8080/actuator/health
-```
+# Register (returns accessToken + refreshToken)
+curl -X POST http://localhost:8080/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@example.com","password":"password123","displayName":"Your Name"}'
 
-**Note on security:** every endpoint is currently unauthenticated (`SecurityConfig` permits all requests) — this is explicitly temporary scaffolding so the skeleton is runnable before Phase 5 adds real JWT authentication and RBAC. See the class-level Javadoc on `SecurityConfig` for the full reasoning.
+# Use the accessToken from the response above
+curl http://localhost:8080/api/v1/categories -H "Authorization: Bearer <accessToken>"
+curl http://localhost:8080/api/v1/users/me -H "Authorization: Bearer <accessToken>"
+
+# ADMIN-only — a fresh USER gets 403 here (there's no seeded admin yet; that's expected)
+curl http://localhost:8080/api/v1/users -H "Authorization: Bearer <accessToken>"
+```
 
 ## Roadmap
 
 1. ✅ Requirements & architecture
 2. ✅ Repository setup & development standards
 3. ✅ Database schema & Flyway migrations
-4. ✅ Spring Boot backend skeleton *(this phase)*
-5. ⬜ Authentication & RBAC
+4. ✅ Spring Boot backend skeleton
+5. ✅ Authentication & RBAC *(this phase)*
 6. ⬜ Incident management functionality
 7. ⬜ React/TypeScript frontend
 8. ⬜ Python AI microservice

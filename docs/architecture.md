@@ -156,8 +156,11 @@ repository/       One Spring Data JPA repository interface per entity
 common/
   exception/      ApiException, ResourceNotFoundException, GlobalExceptionHandler
   dto/            ErrorResponse, PageResponse — shared response envelopes
-config/           SecurityConfig (temporary, see below), OpenApiConfig
+config/           SecurityConfig (real JWT/RBAC config, Phase 5), OpenApiConfig
 category/         First vertical feature slice: Controller → Service → Mapper → DTO
+security/         JWT issuance/parsing, refresh tokens, filters, error handlers (Phase 5)
+auth/             Register/login/refresh/logout: Controller → Service → DTO
+user/             Profile lookup and admin user listing (RBAC demonstration)
 ```
 
 Entities are unidirectional (`@ManyToOne` only, no `@OneToMany` back-references)
@@ -173,11 +176,38 @@ enforcement in the Java layer, not just at the schema level.
 
 The `category` package is the first vertical slice built end-to-end —
 `GET /api/v1/categories` — proving the full layering works before Phase
-5/6 build the larger, auth-guarded incident management surface on the
-same pattern. Mapping between entities and DTOs is done with plain manual
-mapper methods rather than MapStruct (ADR-0007).
+6 builds the larger incident management surface on the same pattern.
+Mapping between entities and DTOs is done with plain manual mapper
+methods rather than MapStruct (ADR-0007).
 
-**Security note:** every endpoint is currently unauthenticated
-(`SecurityConfig` permits all requests). This is explicit, temporary
-scaffolding — see the class-level Javadoc on `SecurityConfig` — replaced
-by JWT authentication and per-action RBAC in Phase 5.
+## Authentication & authorisation (Phase 5)
+
+Replaces Phase 4's temporary permit-all `SecurityConfig` with real JWT
+authentication and RBAC:
+
+- **Access tokens**: short-lived JWTs (HS256), issued by `JwtService`,
+  carrying `sub` (user id), `email`, and `role` claims. Verified on every
+  request by `JwtAuthenticationFilter`, which populates the Spring
+  Security context so both `anyRequest().authenticated()` and
+  `@PreAuthorize` checks work.
+- **Refresh tokens**: opaque random strings stored in Redis
+  (`RefreshTokenService`), not JWTs — genuinely revocable, and rotated
+  (deleted-and-reissued) on every use. See ADR-0008.
+- **RBAC**: `@EnableMethodSecurity` + `@PreAuthorize("hasRole('ADMIN')")`
+  on `GET /api/v1/users`, following the explicit per-action pattern from
+  ADR-0002 rather than a role hierarchy.
+- **Login is manual**, not via Spring Security's `AuthenticationManager`
+  — `AuthService.login` does a direct repository lookup +
+  `PasswordEncoder.matches`. See ADR-0008 for why.
+- **Rate limiting**: Redis-backed fixed-window limiter (`RateLimitingFilter`),
+  applied only to `/api/v1/auth/login` and `/api/v1/auth/register`.
+- **Error responses**: `RestAuthenticationEntryPoint` (401) and
+  `RestAccessDeniedHandler` (403) return the same JSON error envelope as
+  every other error path, instead of Spring Security's default empty/HTML
+  responses.
+- **Audit logging**: register and login events are written to `AuditLog`
+  via the repository added in Phase 3.
+
+Every endpoint except `/api/v1/auth/**`, `/actuator/health`, and the
+Swagger UI now requires a valid JWT — including `/api/v1/categories`,
+which was open in Phase 4 purely as temporary scaffolding.
