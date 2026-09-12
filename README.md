@@ -2,7 +2,7 @@
 
 An enterprise-style internal engineering service desk: users raise incidents, engineers triage and resolve them, admins manage the platform — with an optional AI-assisted analysis service (classification, summarisation, keyword extraction, suggested troubleshooting steps) sitting alongside the core workflow, not at the centre of it.
 
-> **Status: Phase 2 of 16 — repository scaffolding and development standards.**
+> **Status: Phase 3 of 16 — database schema and Flyway migrations.**
 > The application does not yet do anything. See [`docs/decisions/`](docs/decisions) for the reasoning behind key choices and the phase-by-phase build log in commit history.
 
 ## Why this project exists
@@ -51,6 +51,8 @@ docker compose up postgres redis
 
 Application services (`backend`, `ai-service`, `frontend`) are added to `docker-compose.yml` once their Dockerfiles exist (Phase 10). Instructions for running each service individually will be added as they're built.
 
+The database schema (`backend/src/main/resources/db/migration/`) isn't applied automatically yet — that happens when the backend boots and Flyway runs on startup (Phase 4 onward). The migrations themselves are verified independently by `FlywayMigrationTest` (Testcontainers) and were manually run end-to-end against PostgreSQL 16 during Phase 3.
+
 ## Development standards
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for branching strategy, commit conventions, linting/formatting, and the per-phase Definition of Done.
@@ -64,12 +66,13 @@ Non-obvious design choices are recorded as Architecture Decision Records in [`do
 - [ADR-0003](docs/decisions/0003-role-as-enum-column.md) — Role as an enum column vs a normalised roles/permissions table
 - [ADR-0004](docs/decisions/0004-ecs-fargate-over-eks.md) — ECS Fargate over EKS
 - [ADR-0005](docs/decisions/0005-two-pipeline-ci-cd.md) — Two-pipeline CI/CD split (PR verification vs main deployment)
+- [ADR-0006](docs/decisions/0006-check-constraints-over-native-enums.md) — CHECK constraints over native Postgres enum types
 
 ## Roadmap
 
 1. ✅ Requirements & architecture
-2. ✅ Repository setup & development standards *(this phase)*
-3. ⬜ Database schema & Flyway migrations
+2. ✅ Repository setup & development standards
+3. ✅ Database schema & Flyway migrations *(this phase)*
 4. ⬜ Spring Boot backend skeleton
 5. ⬜ Authentication & RBAC
 6. ⬜ Incident management functionality
