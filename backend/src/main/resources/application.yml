@@ -35,9 +35,15 @@ management:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:change-me-in-env}
+    secret: ${JWT_SECRET:change-me-to-a-long-random-string-at-least-32-bytes-for-hs256}
     access-token-ttl-minutes: ${JWT_ACCESS_TOKEN_TTL_MINUTES:15}
     refresh-token-ttl-days: ${JWT_REFRESH_TOKEN_TTL_DAYS:7}
+  cors:
+    allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:5173}
+  rate-limit:
+    auth:
+      max-requests: ${AUTH_RATE_LIMIT_MAX_REQUESTS:5}
+      window-seconds: ${AUTH_RATE_LIMIT_WINDOW_SECONDS:60}
   ai-service:
     base-url: ${AI_SERVICE_BASE_URL:http://localhost:8000}
     internal-token: ${AI_SERVICE_INTERNAL_TOKEN:change-me-in-env}
