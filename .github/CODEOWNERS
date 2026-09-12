@@ -1,0 +1,5 @@
+# Solo project — single owner across all paths.
+# Kept as a real CODEOWNERS file (rather than omitted) to document the
+# convention; would be split by directory (backend/, ai-service/, frontend/,
+# infrastructure/) on a team with multiple contributors.
+* @project-owner
