@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: incident-platform-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/${POSTGRES_DB:incident_platform}
+    username: ${POSTGRES_USER:incident_platform}
+    password: ${POSTGRES_PASSWORD:change-me-locally}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate  # schema is owned by Flyway migrations, not Hibernate auto-DDL
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  data:
+    redis:
+      host: localhost
+      port: ${REDIS_PORT:6379}
+
+server:
+  port: ${BACKEND_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-me-in-env}
+    access-token-ttl-minutes: ${JWT_ACCESS_TOKEN_TTL_MINUTES:15}
+    refresh-token-ttl-days: ${JWT_REFRESH_TOKEN_TTL_DAYS:7}
+  ai-service:
+    base-url: ${AI_SERVICE_BASE_URL:http://localhost:8000}
+    internal-token: ${AI_SERVICE_INTERNAL_TOKEN:change-me-in-env}
+
+# NOTE: no application code exists yet (Phase 2 is scaffolding only).
+# This file establishes config conventions — env-var-backed, sensible local
+# defaults, no secrets committed — that Phase 4 onward will build on.
