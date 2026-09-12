@@ -1,6 +1,7 @@
 package com.incidentplatform.user;
 
 import com.incidentplatform.common.dto.PageResponse;
+import com.incidentplatform.domain.user.Role;
 import com.incidentplatform.security.CustomUserDetails;
 import com.incidentplatform.user.dto.RoleUpdateRequest;
 import com.incidentplatform.user.dto.UserResponse;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -33,13 +35,17 @@ public class UserController {
   }
 
   /**
-   * ADMIN-only (FR-19). The explicit role gate here, rather than a hierarchical check, follows
-   * ADR-0002 — this is a plain role-based permission with no ownership dimension.
+   * ENGINEER/ADMIN (widened from ADMIN-only in Phase 6/7): an ENGINEER needs this to find who to
+   * assign an incident to (FR-8) — there's no other endpoint that lists users. {@code role} lets
+   * the assignment picker request only ENGINEER/ADMIN accounts rather than the full directory,
+   * which also happens to be the more useful shape for that UI. A plain USER still cannot call
+   * this at all; the full unfiltered directory remains something only ADMIN realistically uses.
    */
   @GetMapping
-  @PreAuthorize("hasRole('ADMIN')")
-  public PageResponse<UserResponse> listUsers(@PageableDefault(size = 20) Pageable pageable) {
-    return userService.listUsers(pageable);
+  @PreAuthorize("hasAnyRole('ENGINEER','ADMIN')")
+  public PageResponse<UserResponse> listUsers(
+      @RequestParam(required = false) Role role, @PageableDefault(size = 20) Pageable pageable) {
+    return userService.listUsers(role, pageable);
   }
 
   /** ADMIN-only (FR-19). Self-role-edit is rejected in the service layer, not here — see

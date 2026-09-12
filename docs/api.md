@@ -22,7 +22,7 @@
 | Method | Path | Auth | Notes |
 |---|---|---|---|
 | `GET` | `/api/v1/users/me` | any user | Own profile |
-| `GET` | `/api/v1/users` | ADMIN | Paginated user list |
+| `GET` | `/api/v1/users` | ENGINEER, ADMIN | Paginated user list; `?role=ENGINEER` filters — used by the incident assignment picker |
 | `PATCH` | `/api/v1/users/{id}/role` | ADMIN | Change a user's role (FR-19); rejects self-edit |
 
 ### Categories (authenticated)

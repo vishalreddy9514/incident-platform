@@ -4,11 +4,13 @@ import com.incidentplatform.common.dto.PageResponse;
 import com.incidentplatform.common.exception.ApiException;
 import com.incidentplatform.common.exception.ResourceNotFoundException;
 import com.incidentplatform.domain.audit.AuditLog;
+import com.incidentplatform.domain.user.Role;
 import com.incidentplatform.domain.user.User;
 import com.incidentplatform.repository.AuditLogRepository;
 import com.incidentplatform.repository.UserRepository;
 import com.incidentplatform.user.dto.RoleUpdateRequest;
 import com.incidentplatform.user.dto.UserResponse;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -32,11 +34,17 @@ public class UserService {
   }
 
   /**
-   * ADMIN-only per FR-19; the role gate is applied at the controller via {@code @PreAuthorize}
-   * (ADR-0002), not here — this method has no ownership dimension to enforce, just the role gate.
+   * ADMIN sees everyone (FR-19); ENGINEER can optionally filter to a single role (e.g.
+   * {@code role=ENGINEER}) — this is how the incident assignment picker finds valid assignees,
+   * since an ENGINEER has no other way to discover user ids to assign to. The role gate itself
+   * (who may call this at all) is applied at the controller, per ADR-0002.
    */
-  public PageResponse<UserResponse> listUsers(Pageable pageable) {
-    return PageResponse.of(userRepository.findAll(pageable).map(UserMapper::toResponse));
+  public PageResponse<UserResponse> listUsers(Role roleFilter, Pageable pageable) {
+    Page<User> page =
+        roleFilter != null
+            ? userRepository.findByRole(roleFilter, pageable)
+            : userRepository.findAll(pageable);
+    return PageResponse.of(page.map(UserMapper::toResponse));
   }
 
   /**
