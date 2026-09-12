@@ -138,3 +138,46 @@ all nine tables exist, the seven default categories are seeded, the `role`
 CHECK constraint rejects an invalid value, and `incident_history` genuinely
 rejects `UPDATE`/`DELETE`. This was also verified manually against a local
 PostgreSQL 16 instance before being committed.
+
+## Backend structure (Phase 4)
+
+Package layout under `backend/src/main/java/com/incidentplatform/`:
+
+```
+domain/           JPA entities, one subpackage per bounded concept
+  team/           Team
+  user/           User, Role
+  incident/       Incident, IncidentCategory, IncidentComment,
+                  IncidentAssignment, IncidentHistory, and the
+                  IncidentStatus/Priority/Severity enums
+  audit/          AuditLog
+  ai/             AiAnalysis
+repository/       One Spring Data JPA repository interface per entity
+common/
+  exception/      ApiException, ResourceNotFoundException, GlobalExceptionHandler
+  dto/            ErrorResponse, PageResponse — shared response envelopes
+config/           SecurityConfig (temporary, see below), OpenApiConfig
+category/         First vertical feature slice: Controller → Service → Mapper → DTO
+```
+
+Entities are unidirectional (`@ManyToOne` only, no `@OneToMany` back-references)
+— related data (comments, history, assignments for a given incident) is
+queried explicitly through its own repository rather than lazy-loaded off
+`Incident`, avoiding accidental N+1 queries and keeping each entity simple.
+`created_at`/`updated_at` are managed by Hibernate (`@CreationTimestamp`/
+`@UpdateTimestamp`) for the normal JPA write path, with the database
+triggers from Phase 3 acting as a safety net for any writes that bypass
+the ORM. `incident_history` and `audit_logs` entities have no setters at
+all beyond their constructor, mirroring the database's append-only
+enforcement in the Java layer, not just at the schema level.
+
+The `category` package is the first vertical slice built end-to-end —
+`GET /api/v1/categories` — proving the full layering works before Phase
+5/6 build the larger, auth-guarded incident management surface on the
+same pattern. Mapping between entities and DTOs is done with plain manual
+mapper methods rather than MapStruct (ADR-0007).
+
+**Security note:** every endpoint is currently unauthenticated
+(`SecurityConfig` permits all requests). This is explicit, temporary
+scaffolding — see the class-level Javadoc on `SecurityConfig` — replaced
+by JWT authentication and per-action RBAC in Phase 5.
