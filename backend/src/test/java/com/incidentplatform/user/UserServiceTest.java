@@ -56,11 +56,24 @@ class UserServiceTest {
     var pageRequest = PageRequest.of(0, 20);
     when(userRepository.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(user), pageRequest, 1));
 
-    var response = service().listUsers(pageRequest);
+    var response = service().listUsers(null, pageRequest);
 
     assertThat(response.content()).hasSize(1);
     assertThat(response.content().get(0).email()).isEqualTo("admin@example.com");
     assertThat(response.totalElements()).isEqualTo(1);
+  }
+
+  @Test
+  void listUsersFiltersByRoleWhenProvided() {
+    User engineer = new User("engineer@example.com", "hashed", "Engineer", Role.ENGINEER);
+    var pageRequest = PageRequest.of(0, 20);
+    when(userRepository.findByRole(Role.ENGINEER, pageRequest))
+        .thenReturn(new PageImpl<>(List.of(engineer), pageRequest, 1));
+
+    var response = service().listUsers(Role.ENGINEER, pageRequest);
+
+    assertThat(response.content()).hasSize(1);
+    assertThat(response.content().get(0).role()).isEqualTo(Role.ENGINEER);
   }
 
   @Test

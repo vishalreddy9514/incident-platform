@@ -2,7 +2,7 @@
 
 An enterprise-style internal engineering service desk: users raise incidents, engineers triage and resolve them, admins manage the platform — with an optional AI-assisted analysis service (classification, summarisation, keyword extraction, suggested troubleshooting steps) sitting alongside the core workflow, not at the centre of it.
 
-> **Status: Phase 6 of 16 — incident management functionality.**
+> **Status: Phase 7 of 16 — React/TypeScript frontend.**
 > The application does not yet do anything. See [`docs/decisions/`](docs/decisions) for the reasoning behind key choices and the phase-by-phase build log in commit history.
 
 ## Why this project exists
@@ -70,6 +70,7 @@ Non-obvious design choices are recorded as Architecture Decision Records in [`do
 - [ADR-0007](docs/decisions/0007-manual-mappers-over-mapstruct.md) — Manual mapper methods over MapStruct
 - [ADR-0008](docs/decisions/0008-jwt-refresh-token-strategy.md) — Opaque Redis-backed refresh tokens + manual credential verification
 - [ADR-0009](docs/decisions/0009-admin-bootstrap-strategy.md) — Idempotent startup runner for the first ADMIN account
+- [ADR-0010](docs/decisions/0010-frontend-token-storage.md) — Refresh token in localStorage, access token in memory only
 
 ## Running the backend locally
 
@@ -106,6 +107,27 @@ curl "http://localhost:8080/api/v1/incidents?status=OPEN" -H "Authorization: Bea
 curl http://localhost:8080/api/v1/dashboard/metrics -H "Authorization: Bearer <accessToken>"
 ```
 
+## Running the frontend locally
+
+Requires Node.js 18+ (`node --version`).
+
+```bash
+cd frontend
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Opens on `:5173` and talks to the backend on `:8080` (must be running — see above). Log in with
+the bootstrapped admin credentials, or register a new account, and use the app.
+
+```bash
+npm run build        # type-checks (tsc -b) then produces a production bundle
+npm run test          # Vitest — includes MSW-mocked tests of the token refresh/retry logic
+npm run lint           # ESLint
+npm run format:check   # Prettier
+```
+
 ## Roadmap
 
 1. ✅ Requirements & architecture
@@ -113,8 +135,8 @@ curl http://localhost:8080/api/v1/dashboard/metrics -H "Authorization: Bearer <a
 3. ✅ Database schema & Flyway migrations
 4. ✅ Spring Boot backend skeleton
 5. ✅ Authentication & RBAC
-6. ✅ Incident management functionality *(this phase)*
-7. ⬜ React/TypeScript frontend
+6. ✅ Incident management functionality
+7. ✅ React/TypeScript frontend *(this phase)*
 8. ⬜ Python AI microservice
 9. ⬜ Testing hardening
 10. ⬜ Dockerisation

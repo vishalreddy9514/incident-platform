@@ -248,3 +248,49 @@ The core domain, built on the layering established in Phases 4-5:
   `GROUP BY` (`IncidentRepository.countByStatus`/
   `countByStatusForAssignee`), not client-side aggregation over the full
   dataset.
+
+## Frontend (Phase 7)
+
+React + TypeScript + Vite, structured around the same layering discipline
+as the backend:
+
+```
+api/          types.ts (mirrors every backend DTO), client.ts (fetch
+              wrapper with automatic 401 → refresh → retry), authStore.ts
+              (token/user state outside React), ApiError.ts
+auth/         AuthContext (login/register/logout), ProtectedRoute
+hooks/        One TanStack Query hook file per domain area — incidents,
+              categories, teams, users/dashboard
+components/   Shared UI: Layout (sidebar app shell), Badges, States
+pages/        One component per route
+```
+
+- **Auth state lives outside React** (`authStore.ts`) so the plain
+  `apiFetch` function — used by every query/mutation, not just
+  components — can read/update tokens without being a hook itself.
+  `AuthContext` subscribes to this store and re-renders on change; it's
+  the single source of truth, not a second copy of it.
+- **Token storage**: refresh token in `localStorage`, access token in
+  memory only — a deliberate middle-ground tradeoff, not the strongest
+  possible option. See ADR-0010.
+- **Automatic token refresh**: `apiFetch` catches a 401, exchanges the
+  refresh token for a new pair, and retries the original request once —
+  concurrent 401s (e.g. several queries firing on page load) are
+  deduplicated into a single refresh call via a shared in-flight promise.
+- **RBAC reflected in the UI, not just enforced by it**: `ProtectedRoute`
+  can gate a route by role (`/admin` requires ADMIN), and the incident
+  detail page only shows status/assignment/escalation controls to
+  ENGINEER/ADMIN — but every one of those actions is independently
+  re-enforced server-side regardless of what the UI shows, per the
+  standard rule that client-side gating is a UX nicety, not a security
+  boundary.
+- **A real backend gap found while building this**: `GET /api/v1/users`
+  was ADMIN-only (Phase 5/6), but an ENGINEER has no other way to
+  discover who to assign an incident to. Widened to ENGINEER+ADMIN with
+  an optional `?role=` filter — see the Javadoc on `UserController
+  .listUsers` and `docs/api.md`.
+- **Verified with a real build**: unlike the backend (Maven Central isn't
+  reachable in the sandbox this was built in), npm's registry *is*
+  reachable — so this app was genuinely `npm install`'d, type-checked
+  (`tsc -b`), linted, tested (Vitest + Testing Library + MSW), and
+  production-built (`vite build`), not just written and hoped for.

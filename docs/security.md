@@ -64,8 +64,16 @@ used to enumerate registered email addresses.
 ## Audit logging
 
 Register and login events are written to `AuditLog` (the append-only
-table from Phase 3) via `AuditLogRepository`. Role changes and other
-admin actions will extend this in Phase 6 as those endpoints are built.
+table from Phase 3) via `AuditLogRepository`. Role changes are also
+audited (Phase 6, `USER_ROLE_CHANGED`).
+
+## Frontend token storage (Phase 7)
+
+The refresh token is stored in `localStorage`; the access token is kept
+in memory only, never persisted. This is a deliberate middle-ground
+tradeoff, not the strongest possible option — see ADR-0010 for the full
+reasoning and the documented upgrade path (an httpOnly-cookie refresh
+token) if this project's threat model ever calls for it.
 
 ## Not yet built (tracked for later phases)
 
