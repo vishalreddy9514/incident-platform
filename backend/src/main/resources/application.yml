@@ -11,6 +11,12 @@ spring:
     hibernate:
       ddl-auto: validate  # schema is owned by Flyway migrations, not Hibernate auto-DDL
     open-in-view: false
+    properties:
+      hibernate:
+        # Entity associations stay LAZY by design (Incident.java's javadoc); this batches the
+        # otherwise-N+1 lookups for a page of incidents' category/creator/assignee/team into a
+        # handful of IN-clause queries instead of one query per row per association.
+        default_batch_fetch_size: 20
 
   flyway:
     enabled: true
@@ -47,6 +53,9 @@ app:
   ai-service:
     base-url: ${AI_SERVICE_BASE_URL:http://localhost:8000}
     internal-token: ${AI_SERVICE_INTERNAL_TOKEN:change-me-in-env}
+  admin-bootstrap:
+    email: ${ADMIN_BOOTSTRAP_EMAIL:}
+    password: ${ADMIN_BOOTSTRAP_PASSWORD:}
 
 # NOTE: no application code exists yet (Phase 2 is scaffolding only).
 # This file establishes config conventions — env-var-backed, sensible local

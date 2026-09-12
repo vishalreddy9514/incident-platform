@@ -2,7 +2,7 @@
 
 An enterprise-style internal engineering service desk: users raise incidents, engineers triage and resolve them, admins manage the platform — with an optional AI-assisted analysis service (classification, summarisation, keyword extraction, suggested troubleshooting steps) sitting alongside the core workflow, not at the centre of it.
 
-> **Status: Phase 5 of 16 — authentication and RBAC.**
+> **Status: Phase 6 of 16 — incident management functionality.**
 > The application does not yet do anything. See [`docs/decisions/`](docs/decisions) for the reasoning behind key choices and the phase-by-phase build log in commit history.
 
 ## Why this project exists
@@ -69,10 +69,11 @@ Non-obvious design choices are recorded as Architecture Decision Records in [`do
 - [ADR-0006](docs/decisions/0006-check-constraints-over-native-enums.md) — CHECK constraints over native Postgres enum types
 - [ADR-0007](docs/decisions/0007-manual-mappers-over-mapstruct.md) — Manual mapper methods over MapStruct
 - [ADR-0008](docs/decisions/0008-jwt-refresh-token-strategy.md) — Opaque Redis-backed refresh tokens + manual credential verification
+- [ADR-0009](docs/decisions/0009-admin-bootstrap-strategy.md) — Idempotent startup runner for the first ADMIN account
 
 ## Running the backend locally
 
-Requires Maven and JDK 21 installed locally (no wrapper committed yet — added if it becomes a friction point; for now `mvn -version` should show Java 21).
+Requires Maven and JDK 21 installed locally (`mvn -version` should show Java 21).
 
 ```bash
 docker compose up -d postgres redis
@@ -80,20 +81,29 @@ cd backend
 mvn spring-boot:run
 ```
 
-The app boots on `:8080`. Flyway applies all migrations automatically on startup. Every endpoint except `/api/v1/auth/**`, `/actuator/health`, and the Swagger UI now requires a valid JWT — try the full flow:
+The app boots on `:8080`. Flyway applies all migrations automatically on startup. If
+`ADMIN_BOOTSTRAP_EMAIL`/`ADMIN_BOOTSTRAP_PASSWORD` are set in your `.env` (they are by default in
+`.env.example`), an ADMIN account is created automatically on first startup — see ADR-0009.
 
 ```bash
-# Register (returns accessToken + refreshToken)
+# Register a regular USER
 curl -X POST http://localhost:8080/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"you@example.com","password":"password123","displayName":"Your Name"}'
 
-# Use the accessToken from the response above
-curl http://localhost:8080/api/v1/categories -H "Authorization: Bearer <accessToken>"
-curl http://localhost:8080/api/v1/users/me -H "Authorization: Bearer <accessToken>"
+# Log in as the bootstrapped admin (see .env for the credentials)
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"change-me-admin-password"}'
 
-# ADMIN-only — a fresh USER gets 403 here (there's no seeded admin yet; that's expected)
-curl http://localhost:8080/api/v1/users -H "Authorization: Bearer <accessToken>"
+# Create an incident (any authenticated user)
+curl -X POST http://localhost:8080/api/v1/incidents \
+  -H "Authorization: Bearer <accessToken>" -H "Content-Type: application/json" \
+  -d '{"title":"Laptop wont boot","description":"Black screen","categoryId":1}'
+
+# List/search incidents, view dashboard metrics, etc.
+curl "http://localhost:8080/api/v1/incidents?status=OPEN" -H "Authorization: Bearer <accessToken>"
+curl http://localhost:8080/api/v1/dashboard/metrics -H "Authorization: Bearer <accessToken>"
 ```
 
 ## Roadmap
@@ -102,8 +112,8 @@ curl http://localhost:8080/api/v1/users -H "Authorization: Bearer <accessToken>"
 2. ✅ Repository setup & development standards
 3. ✅ Database schema & Flyway migrations
 4. ✅ Spring Boot backend skeleton
-5. ✅ Authentication & RBAC *(this phase)*
-6. ⬜ Incident management functionality
+5. ✅ Authentication & RBAC
+6. ✅ Incident management functionality *(this phase)*
 7. ⬜ React/TypeScript frontend
 8. ⬜ Python AI microservice
 9. ⬜ Testing hardening

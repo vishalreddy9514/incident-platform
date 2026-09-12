@@ -37,8 +37,8 @@ class CategoryControllerTest {
     when(categoryService.getActiveCategories())
         .thenReturn(
             List.of(
-                new CategoryResponse(1L, "Hardware", "Physical equipment issues"),
-                new CategoryResponse(2L, "Network", "Connectivity issues")));
+                new CategoryResponse(1L, "Hardware", "Physical equipment issues", true),
+                new CategoryResponse(2L, "Network", "Connectivity issues", true)));
 
     mockMvc
         .perform(get("/api/v1/categories").accept(MediaType.APPLICATION_JSON))
