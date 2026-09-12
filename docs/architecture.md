@@ -211,3 +211,40 @@ authentication and RBAC:
 Every endpoint except `/api/v1/auth/**`, `/actuator/health`, and the
 Swagger UI now requires a valid JWT — including `/api/v1/categories`,
 which was open in Phase 4 purely as temporary scaffolding.
+
+## Incident management (Phase 6)
+
+The core domain, built on the layering established in Phases 4-5:
+
+- **State machine**: `IncidentStatus` transitions are validated against an
+  explicit allow-list (`OPEN → {IN_PROGRESS, ESCALATED, CLOSED}`, etc.,
+  `CLOSED` terminal). An invalid transition is rejected with `409
+  INVALID_STATUS_TRANSITION` — the rule lives once, in `IncidentService`,
+  not scattered across every place that touches status.
+- **Ownership + role authorization together**: pure role gates
+  (`assign`, `escalate` — ENGINEER/ADMIN only) are `@PreAuthorize` at the
+  controller; ownership and business-state rules (a USER can edit their
+  *own* incident, but only fields other than status/priority/severity,
+  and only while it's still `OPEN`) live in `IncidentService`, per
+  ADR-0002 — the two kinds of rule don't fit the same enforcement point.
+- **Dynamic filtering**: `GET /api/v1/incidents` combines optional
+  status/priority/category/assignee filters via a JPA `Specification`
+  (`IncidentSpecifications`) rather than a `findByXAndYAndZ...` method
+  explosion. A USER's results are always scoped to incidents they
+  created, regardless of what filters are requested — enforced in the
+  service, not left to the client to "remember" to filter correctly.
+- **N+1 avoidance**: entity associations stay `LAZY` (per Phase 4's
+  design), but `hibernate.default_batch_fetch_size: 20` batches the
+  otherwise-per-row lookups for a page of incidents' category/creator/
+  assignee into a handful of `IN (...)` queries — chosen over combining
+  `@EntityGraph`/fetch-joins with `Specification` + `Pageable`, which is
+  a known-fragile combination in Hibernate.
+- **Admin bootstrapping**: `AdminBootstrapRunner` creates exactly one
+  ADMIN account on startup from env-configured credentials, if none
+  exists yet — see ADR-0009. Without this, no ADMIN-only endpoint
+  (including the ones added this phase) would be reachable at all.
+- **Dashboard metrics**: `GET /api/v1/dashboard/metrics` is role-scoped
+  (own/assigned/system-wide per FR-16/17/18), computed via a database
+  `GROUP BY` (`IncidentRepository.countByStatus`/
+  `countByStatusForAssignee`), not client-side aggregation over the full
+  dataset.

@@ -9,6 +9,7 @@ final class CategoryMapper {
   private CategoryMapper() {}
 
   static CategoryResponse toResponse(IncidentCategory category) {
-    return new CategoryResponse(category.getId(), category.getName(), category.getDescription());
+    return new CategoryResponse(
+        category.getId(), category.getName(), category.getDescription(), category.isActive());
   }
 }
