@@ -2,7 +2,7 @@
 
 An enterprise-style internal engineering service desk: users raise incidents, engineers triage and resolve them, admins manage the platform — with an optional AI-assisted analysis service (classification, summarisation, keyword extraction, suggested troubleshooting steps) sitting alongside the core workflow, not at the centre of it.
 
-> **Status: Phase 3 of 16 — database schema and Flyway migrations.**
+> **Status: Phase 4 of 16 — Spring Boot backend skeleton.**
 > The application does not yet do anything. See [`docs/decisions/`](docs/decisions) for the reasoning behind key choices and the phase-by-phase build log in commit history.
 
 ## Why this project exists
@@ -67,13 +67,33 @@ Non-obvious design choices are recorded as Architecture Decision Records in [`do
 - [ADR-0004](docs/decisions/0004-ecs-fargate-over-eks.md) — ECS Fargate over EKS
 - [ADR-0005](docs/decisions/0005-two-pipeline-ci-cd.md) — Two-pipeline CI/CD split (PR verification vs main deployment)
 - [ADR-0006](docs/decisions/0006-check-constraints-over-native-enums.md) — CHECK constraints over native Postgres enum types
+- [ADR-0007](docs/decisions/0007-manual-mappers-over-mapstruct.md) — Manual mapper methods over MapStruct
+
+## Running the backend locally
+
+Requires Maven and JDK 21 installed locally (no wrapper committed yet — added if it becomes a friction point; for now `mvn -version` should show Java 21).
+
+```bash
+docker compose up -d postgres redis
+cd backend
+mvn spring-boot:run
+```
+
+The app boots on `:8080`. Flyway applies all migrations automatically on startup. Try:
+
+```bash
+curl http://localhost:8080/api/v1/categories
+curl http://localhost:8080/actuator/health
+```
+
+**Note on security:** every endpoint is currently unauthenticated (`SecurityConfig` permits all requests) — this is explicitly temporary scaffolding so the skeleton is runnable before Phase 5 adds real JWT authentication and RBAC. See the class-level Javadoc on `SecurityConfig` for the full reasoning.
 
 ## Roadmap
 
 1. ✅ Requirements & architecture
 2. ✅ Repository setup & development standards
-3. ✅ Database schema & Flyway migrations *(this phase)*
-4. ⬜ Spring Boot backend skeleton
+3. ✅ Database schema & Flyway migrations
+4. ✅ Spring Boot backend skeleton *(this phase)*
 5. ⬜ Authentication & RBAC
 6. ⬜ Incident management functionality
 7. ⬜ React/TypeScript frontend
