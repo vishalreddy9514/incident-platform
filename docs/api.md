@@ -54,6 +54,8 @@
 | `GET` | `/api/v1/incidents/{id}/history` | owner or ENGINEER/ADMIN | Timeline (FR-11) |
 | `POST` | `/api/v1/incidents/{id}/assign` | ENGINEER/ADMIN | Assign to an engineer/admin (FR-8); auto-moves OPEN → IN_PROGRESS |
 | `POST` | `/api/v1/incidents/{id}/escalate` | ENGINEER/ADMIN | Escalate, with an optional reason |
+| `POST` | `/api/v1/incidents/{id}/ai-analysis` | owner or ENGINEER/ADMIN | Request AI analysis (FR-13); calls the AI service, persists and returns an `AiAnalysis` |
+| `GET` | `/api/v1/incidents/{id}/ai-analysis` | owner or ENGINEER/ADMIN | Most recent stored analysis for this incident, `404` if none yet |
 
 ### Dashboard (authenticated)
 
@@ -78,10 +80,10 @@ Spring Boot backend. Base URL configured via `AI_SERVICE_BASE_URL`.
 | `GET` | `/internal/v1/health` | none | `{ status, provider }` |
 
 The provider behind `/analyse` is runtime-selectable (`LLM_PROVIDER=mock`
-default, or `openai`) — see ADR-0011. `POST /api/v1/incidents/{id}/ai-analysis`
-(the backend-facing endpoint that calls this and persists an `AiAnalysis`
-record) is not yet built — the `AiAnalysis` entity/table/repository exist,
-but the backend controller/service wiring is a follow-up to this phase.
+default, or `openai`) — see ADR-0011. The backend's `AiAnalysisClient` calls
+this over the internal token above; any failure (unreachable service, non-2xx,
+malformed response) surfaces to the frontend as `503 AI_SERVICE_UNAVAILABLE`
+(FR-15) without affecting any other incident operation.
 
 ## Status transition rules
 
@@ -116,7 +118,7 @@ Error codes introduced so far: `EMAIL_ALREADY_REGISTERED` (409),
 (401), `FORBIDDEN` (403), `NOT_FOUND` (404), `VALIDATION_FAILED` (400),
 `INVALID_STATUS_TRANSITION` (409), `INVALID_ASSIGNEE` (400),
 `CATEGORY_NAME_TAKEN` (409), `TEAM_NAME_TAKEN` (409),
-`CANNOT_CHANGE_OWN_ROLE` (400).
+`CANNOT_CHANGE_OWN_ROLE` (400), `AI_SERVICE_UNAVAILABLE` (503).
 
 Full endpoint list as originally planned: see
 [`PHASE-1-requirements-and-architecture.md`](../PHASE-1-requirements-and-architecture.md) §9.

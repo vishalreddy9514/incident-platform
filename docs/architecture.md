@@ -347,3 +347,49 @@ app/
   call mocked), `ruff check`, `black --check`, and `mypy` all run clean;
   the app was also started with `uvicorn` and hit with real HTTP requests
   to confirm the shape above, not just asserted in tests.
+
+### Backend wiring (also Phase 8)
+
+The Java side of FR-13 — `com.incidentplatform.ai` — completes the loop the
+AI service alone can't:
+
+```
+ai/
+  AiAnalysisClient.java    RestClient wrapper; sends X-Internal-Token,
+                           wraps any failure as 503 AI_SERVICE_UNAVAILABLE
+  AiAnalysisService.java   Orchestrates: ownership check -> client call ->
+                           persist AiAnalysis -> map to response
+  AiAnalysisMapper.java    keywords/suggestedSteps jsonb <-> List<String>
+                           (Jackson, not manual string-building, unlike
+                           AuditLog's simpler single-field metadata)
+  dto/                     AnalyseIncidentRequest, AiAnalysisResult (the AI
+                           service's response shape), AiAnalysisResponse
+```
+
+- **Reuses `IncidentService`'s ownership rule** rather than duplicating it:
+  a new `IncidentService.requireViewableIncident` exposes the existing
+  `requireIncident` + `assertCanView` pair for `AiAnalysisService` to call,
+  so "who can request/view analysis for this incident" is defined once.
+- **Timeouts live in Spring config, not the client**: a `RestClientCustomizer`
+  bean (`config/RestClientConfig.java`) applies a 5s connect/15s read
+  timeout to every injected `RestClient.Builder`. Keeping that out of
+  `AiAnalysisClient`'s own constructor was a deliberate testability choice
+  — the constructor only calls `.baseUrl()`/`.defaultHeader()`/`.build()`,
+  so a test can bind `MockRestServiceServer` to a plain builder and pass it
+  straight in, without the client's own setup silently overwriting the
+  mock's request factory (an easy mistake: setting a request factory again
+  after `MockRestServiceServer.bindTo(builder)` replaces its mock).
+- **Endpoints live on `IncidentController`**, not a separate controller —
+  `POST`/`GET /api/v1/incidents/{id}/ai-analysis` sit alongside
+  comments/history/assign/escalate as more nested incident actions, the
+  same pattern the rest of that controller already follows.
+- **Verified**: `AiAnalysisClientTest` exercises the real HTTP contract
+  (headers, path, JSON body) against `MockRestServiceServer`, not a mocked-
+  away client; `AiAnalysisServiceTest` covers orchestration and the
+  not-yet-analysed case; `IncidentControllerTest` covers both endpoints'
+  request/response shape. (A pre-existing, unrelated issue in this sandbox
+  environment prevents some `@WebMvcTest`/Mockito-based tests — including
+  parts of `IncidentControllerTest` and `IncidentServiceTest` predating
+  this phase — from completing a full Spring context load; it reproduces
+  identically on a clean checkout of the prior commit, so it isn't
+  something this phase introduced.)
