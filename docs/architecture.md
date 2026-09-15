@@ -387,9 +387,90 @@ ai/
   (headers, path, JSON body) against `MockRestServiceServer`, not a mocked-
   away client; `AiAnalysisServiceTest` covers orchestration and the
   not-yet-analysed case; `IncidentControllerTest` covers both endpoints'
-  request/response shape. (A pre-existing, unrelated issue in this sandbox
-  environment prevents some `@WebMvcTest`/Mockito-based tests — including
-  parts of `IncidentControllerTest` and `IncidentServiceTest` predating
-  this phase — from completing a full Spring context load; it reproduces
-  identically on a clean checkout of the prior commit, so it isn't
-  something this phase introduced.)
+  request/response shape. Three pre-existing, unrelated test bugs
+  (predating this phase, reproduced on a clean checkout of the prior
+  commit) were found and fixed alongside this work — see the "Fixed
+  pre-existing test failures" note below.
+
+### Fixed pre-existing test failures (also Phase 8, as a follow-up)
+
+Running the backend test suite for what appears to be the first time
+against a reachable Maven Central (earlier phases' sandboxes couldn't
+reach it) surfaced three real, independent bugs:
+
+- **`@WebMvcTest` context load failures** (`CategoryControllerTest`,
+  `AuthControllerTest`, `IncidentControllerTest`): `@AutoConfigureMockMvc
+  (addFilters = false)` only skips *registering* filters into the mock
+  chain — Spring still *constructs* any `@Component`-annotated `Filter`
+  bean regardless, and `JwtAuthenticationFilter`/`RateLimitingFilter`
+  are both `@Component` `Filter`s whose constructors need
+  `JwtService`/`StringRedisTemplate`, beans the slice doesn't provide.
+  Fixed by `@MockBean`-ing both filters in each affected test.
+- **`DashboardServiceTest`**: a stub-building helper that itself calls
+  `when(...).thenReturn(...)` was invoked as an argument expression
+  inside another `when(...).thenReturn(...)` call, corrupting Mockito's
+  stubbing state machine. Fixed by evaluating the inner mock first.
+- **`IncidentServiceTest`**: ownership checks call `.getId().equals(...)`
+  on entities the test fixtures never assigned an ID to (a real,
+  persisted entity always has one). Fixed with `ReflectionTestUtils`.
+
+62 of 67 backend tests pass as a result; the other 5 need a real Docker
+daemon for Testcontainers, unavailable in the sandbox this was verified
+in (confirmed via their own failure logs, not assumed).
+
+## Dockerisation (Phase 10)
+
+Each service gets its own multi-stage `Dockerfile` — compiled/built in one
+stage, run from a minimal runtime image in the next, so no build toolchain
+(Maven, npm, the JDK compiler) ships in the final image:
+
+```
+backend/Dockerfile      eclipse-temurin:21-jdk-alpine (mvn package) ->
+                         eclipse-temurin:21-jre-alpine, non-root user
+ai-service/Dockerfile   python:3.12-slim, non-root user, uvicorn
+frontend/Dockerfile     node:20-alpine (npm ci && vite build) ->
+                         nginx:1.27-alpine serving the static bundle
+```
+
+- **`docker-compose.yml`** now runs all five services. `depends_on:
+  condition: service_healthy` (backend waits on Postgres+Redis; frontend
+  waits on the backend) means `docker compose up --build` doesn't race a
+  service against a dependency that isn't ready yet — every service
+  defines its own `HEALTHCHECK`/`healthcheck` (backend's own
+  `/actuator/health`, the AI service's `/internal/v1/health`, and a
+  `/healthz` location added to the frontend's nginx config for exactly
+  this purpose, since a static file server has no natural health
+  endpoint of its own).
+- **Container-network hostnames vs `localhost`**: `application.yml`
+  hardcoded `localhost` for both the Postgres URL and the Redis host —
+  correct for `mvn spring-boot:run` against `docker compose up postgres
+  redis`, wrong once the backend is itself a container (a container's
+  `localhost` is itself, not its neighbours). Parameterised as
+  `${POSTGRES_HOST:localhost}`/`${REDIS_HOST:localhost}`, with `.env`
+  defaulting both to the compose service names (`postgres`/`redis`) —
+  those defaults are only ever read by the backend when it runs as a
+  container (`env_file: .env`), since `mvn spring-boot:run` never loads
+  `.env` into its process environment at all, so the two paths don't
+  conflict. `docker-compose.yml` also pins them explicitly on the
+  backend service itself, so the file stays correct even if someone
+  changes `.env`'s defaults for a different workflow.
+- **The frontend's API URL is baked in at build time, not runtime**:
+  Vite inlines `import.meta.env.VITE_API_BASE_URL` into the static
+  bundle during `vite build` — unlike a server-side app's environment
+  variables, it can't be changed after the image is built. Passed as a
+  Docker build ARG (`docker-compose.yml`'s `build.args`) rather than a
+  container-start-time `environment:` entry, which would silently have
+  no effect. The value itself stays `http://localhost:8080/api/v1` even
+  in Docker — the frontend's JS runs in the *browser*, not inside the
+  compose network, so it must reach the backend via its published host
+  port, not the `backend` service hostname (which only resolves inside
+  the compose network's own DNS).
+- **Verified**: `docker compose config` parses and interpolates the full
+  file with no errors. Building and running the images with real
+  registry pulls could **not** be verified in this environment — the
+  sandbox's egress policy returns `403` on `production.cloudfront.docker.com`
+  (Docker Hub's blob CDN), confirmed via the proxy's own diagnostic
+  status endpoint as a policy denial, not a transient failure, so it
+  wasn't retried or routed around. Recommend running `docker compose up
+  --build` in an environment with real registry access as the first
+  verification step before relying on these images.
