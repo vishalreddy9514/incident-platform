@@ -197,8 +197,9 @@ pytest                  # unit + API tests (mock provider only — no network/AP
 6. ✅ Incident management functionality
 7. ✅ React/TypeScript frontend
 8. ✅ Python AI microservice
-9. ⬜ Testing hardening
-10. ✅ Dockerisation *(this phase)*
+9. 🟡 Testing hardening — see [`docs/testing.md`](docs/testing.md); backend RBAC/mapper gaps
+   and frontend auth/routing covered, most frontend pages still untested
+10. ✅ Dockerisation
 11. ⬜ CI/CD with GitHub Actions
 12. ⬜ Terraform & AWS infrastructure
 13. ⬜ Cloud deployment

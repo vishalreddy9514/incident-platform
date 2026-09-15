@@ -1,3 +1,7 @@
+from app.main import app
+from app.providers.errors import AnalysisProviderError
+from app.routers.analyse import get_provider
+
 PAYLOAD = {
     "title": "VPN keeps disconnecting",
     "description": (
@@ -63,3 +67,17 @@ def test_analyse_accepts_optional_category_hint(client, auth_headers):
     response = client.post("/internal/v1/analyse", json=payload, headers=auth_headers)
 
     assert response.status_code == 200
+
+
+def test_analyse_maps_a_provider_failure_to_502(client, auth_headers):
+    class FailingProvider:
+        async def analyse(self, request):
+            raise AnalysisProviderError("upstream is down")
+
+    app.dependency_overrides[get_provider] = FailingProvider
+    try:
+        response = client.post("/internal/v1/analyse", json=PAYLOAD, headers=auth_headers)
+    finally:
+        del app.dependency_overrides[get_provider]
+
+    assert response.status_code == 502
