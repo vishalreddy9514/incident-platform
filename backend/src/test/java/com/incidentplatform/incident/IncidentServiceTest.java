@@ -30,6 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class IncidentServiceTest {
@@ -63,6 +64,12 @@ class IncidentServiceTest {
     category = new IncidentCategory("Hardware", "Physical equipment issues");
     creator = new User("creator@example.com", "hashed", "Creator", Role.USER);
     engineer = new User("engineer@example.com", "hashed", "Engineer", Role.ENGINEER);
+    // IDs are DB-generated in production, so a persisted entity always has one; assign them here
+    // too, since ownership checks (assertCanView/update) call .getId().equals(...) and every real
+    // Incident/User this service touches has already been loaded from a repository.
+    ReflectionTestUtils.setField(category, "id", 1L);
+    ReflectionTestUtils.setField(creator, "id", 100L);
+    ReflectionTestUtils.setField(engineer, "id", 200L);
     creatorPrincipal = new CustomUserDetails(creator);
     engineerPrincipal = new CustomUserDetails(engineer);
   }

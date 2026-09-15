@@ -31,8 +31,8 @@ class DashboardServiceTest {
   void userScopeReturnsOwnCountsWithEveryStatusPresent() {
     User user = new User("user@example.com", "hashed", "User", Role.USER);
     CustomUserDetails principal = new CustomUserDetails(user);
-    when(incidentRepository.countByStatus(principal.getUserId()))
-        .thenReturn(List.of(statusCount(IncidentStatus.OPEN, 3)));
+    IncidentRepository.StatusCount openCount = statusCount(IncidentStatus.OPEN, 3);
+    when(incidentRepository.countByStatus(principal.getUserId())).thenReturn(List.of(openCount));
 
     var response = new DashboardService(incidentRepository).getMetrics(principal);
 
@@ -47,8 +47,9 @@ class DashboardServiceTest {
   void engineerScopeUsesTheAssigneeQuery() {
     User engineer = new User("engineer@example.com", "hashed", "Engineer", Role.ENGINEER);
     CustomUserDetails principal = new CustomUserDetails(engineer);
+    IncidentRepository.StatusCount inProgressCount = statusCount(IncidentStatus.IN_PROGRESS, 2);
     when(incidentRepository.countByStatusForAssignee(principal.getUserId()))
-        .thenReturn(List.of(statusCount(IncidentStatus.IN_PROGRESS, 2)));
+        .thenReturn(List.of(inProgressCount));
 
     var response = new DashboardService(incidentRepository).getMetrics(principal);
 
@@ -60,8 +61,8 @@ class DashboardServiceTest {
   void adminScopeQueriesAcrossAllIncidents() {
     User admin = new User("admin@example.com", "hashed", "Admin", Role.ADMIN);
     CustomUserDetails principal = new CustomUserDetails(admin);
-    when(incidentRepository.countByStatus(null))
-        .thenReturn(List.of(statusCount(IncidentStatus.RESOLVED, 10)));
+    IncidentRepository.StatusCount resolvedCount = statusCount(IncidentStatus.RESOLVED, 10);
+    when(incidentRepository.countByStatus(null)).thenReturn(List.of(resolvedCount));
 
     var response = new DashboardService(incidentRepository).getMetrics(principal);
 
