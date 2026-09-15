@@ -1,11 +1,8 @@
-# Local development environment.
-#
-# At Phase 2, only the infrastructure dependencies (Postgres, Redis) are
-# runnable — there is no application code yet. Run `docker compose up postgres redis`
-# to confirm the environment works. The backend/ai-service/frontend blocks
-# below are wired up but commented out; they are enabled in the phases that
-# introduce each service's Dockerfile (backend: Phase 10, ai-service: Phase 10,
-# frontend: Phase 10), rather than left as fake/placeholder services.
+# Local development environment. `docker compose up --build` runs the whole
+# stack (Postgres, Redis, backend, ai-service, frontend); `docker compose up
+# postgres redis` alone is still useful for running the backend/ai-service
+# outside Docker against containerised infra (see README's per-service
+# "Running locally" sections).
 
 services:
   postgres:
@@ -36,36 +33,60 @@ services:
       timeout: 5s
       retries: 10
 
-  # backend:
-  #   build:
-  #     context: ./backend
-  #   container_name: incident-platform-backend
-  #   env_file: .env
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-  #   ports:
-  #     - "${BACKEND_PORT:-8080}:8080"
-  #
-  # ai-service:
-  #   build:
-  #     context: ./ai-service
-  #   container_name: incident-platform-ai-service
-  #   env_file: .env
-  #   ports:
-  #     - "${AI_SERVICE_PORT:-8000}:8000"
-  #
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #   container_name: incident-platform-frontend
-  #   env_file: .env
-  #   depends_on:
-  #     - backend
-  #   ports:
-  #     - "${FRONTEND_PORT:-5173}:5173"
+  backend:
+    build:
+      context: ./backend
+    container_name: incident-platform-backend
+    env_file: .env
+    environment:
+      # Overrides application.yml's `localhost` default (correct for
+      # `mvn spring-boot:run`, wrong once the backend is itself a container)
+      # to the compose service names below, which its own internal DNS
+      # resolves — .env's POSTGRES_HOST/REDIS_HOST default to these already,
+      # but pinning them here means this file is correct even if someone
+      # changes those defaults for a non-Docker workflow.
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      start_period: 40s
+      retries: 5
+
+  ai-service:
+    build:
+      context: ./ai-service
+    container_name: incident-platform-ai-service
+    env_file: .env
+    ports:
+      - "${AI_SERVICE_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/internal/v1/health')"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080/api/v1}
+    container_name: incident-platform-frontend
+    env_file: .env
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
 
 volumes:
   postgres-data:
