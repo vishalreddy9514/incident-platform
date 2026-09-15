@@ -3,7 +3,10 @@ spring:
     name: incident-platform-backend
 
   datasource:
-    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/${POSTGRES_DB:incident_platform}
+    # POSTGRES_HOST defaults to localhost for `mvn spring-boot:run` against
+    # `docker compose up postgres redis`; docker-compose.yml overrides it to
+    # the "postgres" service name when the backend itself runs as a container.
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:incident_platform}
     username: ${POSTGRES_USER:incident_platform}
     password: ${POSTGRES_PASSWORD:change-me-locally}
 
@@ -24,7 +27,7 @@ spring:
 
   data:
     redis:
-      host: localhost
+      host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 
 server:
@@ -56,7 +59,3 @@ app:
   admin-bootstrap:
     email: ${ADMIN_BOOTSTRAP_EMAIL:}
     password: ${ADMIN_BOOTSTRAP_PASSWORD:}
-
-# NOTE: no application code exists yet (Phase 2 is scaffolding only).
-# This file establishes config conventions — env-var-backed, sensible local
-# defaults, no secrets committed — that Phase 4 onward will build on.

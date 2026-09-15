@@ -2,8 +2,8 @@
 
 An enterprise-style internal engineering service desk: users raise incidents, engineers triage and resolve them, admins manage the platform — with an optional AI-assisted analysis service (classification, summarisation, keyword extraction, suggested troubleshooting steps) sitting alongside the core workflow, not at the centre of it.
 
-> **Status: Phase 8 of 16 — Python AI microservice.**
-> Core auth/RBAC, incident management, dashboards, and the frontend are built and runnable (Phases 3-7); the AI service now runs independently too, but isn't yet wired end-to-end into the backend. See [`docs/decisions/`](docs/decisions) for the reasoning behind key choices and the phase-by-phase build log in commit history.
+> **Status: Phase 10 of 16 — Dockerisation.**
+> Core auth/RBAC, incident management, dashboards, the frontend, and the AI service (wired end-to-end into the backend) are built and runnable; the whole stack now also runs with a single `docker compose up --build`. See [`docs/decisions/`](docs/decisions) for the reasoning behind key choices and the phase-by-phase build log in commit history.
 
 ## Why this project exists
 
@@ -40,18 +40,36 @@ incident-platform/
 └── .env.example          # Documented environment variables (no real secrets)
 ```
 
-## Local development
+## Running everything with Docker Compose
 
-At this phase, only the infrastructure dependencies are runnable:
+The whole stack — Postgres, Redis, backend, ai-service, frontend — runs with one command:
 
 ```bash
 cp .env.example .env
+docker compose up --build
+```
+
+- Frontend: `http://localhost:5173` (nginx serving the production build)
+- Backend: `http://localhost:8080` (Flyway applies migrations on startup)
+- AI service: `http://localhost:8000`
+
+Each service has its own multi-stage `Dockerfile` (compiled/built in one stage, run from a
+minimal runtime image in the next — no build toolchain ships in the final image) and a
+`HEALTHCHECK`; `docker-compose.yml`'s `depends_on: condition: service_healthy` sequencing means
+`docker compose up` won't race the backend against a Postgres that isn't accepting connections
+yet. `POSTGRES_HOST`/`REDIS_HOST` in `.env` default to the compose service names (`postgres`,
+`redis`) — the backend's own `application.yml` defaults to `localhost` for the non-Docker path
+below, since containers can't reach each other via `localhost`.
+
+Only need the databases (e.g. to run the backend or ai-service directly on your machine)?
+
+```bash
 docker compose up postgres redis
 ```
 
-Application services (`backend`, `ai-service`, `frontend`) are added to `docker-compose.yml` once their Dockerfiles exist (Phase 10). Instructions for running each service individually will be added as they're built.
-
-The database schema (`backend/src/main/resources/db/migration/`) isn't applied automatically yet — that happens when the backend boots and Flyway runs on startup (Phase 4 onward). The migrations themselves are verified independently by `FlywayMigrationTest` (Testcontainers) and were manually run end-to-end against PostgreSQL 16 during Phase 3.
+Migrations (`backend/src/main/resources/db/migration/`) are applied automatically by Flyway when
+the backend boots, however it's running; they're verified independently by `FlywayMigrationTest`
+(Testcontainers) and were manually run end-to-end against PostgreSQL 16 during Phase 3.
 
 ## Development standards
 
@@ -178,9 +196,9 @@ pytest                  # unit + API tests (mock provider only — no network/AP
 5. ✅ Authentication & RBAC
 6. ✅ Incident management functionality
 7. ✅ React/TypeScript frontend
-8. ✅ Python AI microservice *(this phase)*
+8. ✅ Python AI microservice
 9. ⬜ Testing hardening
-10. ⬜ Dockerisation
+10. ✅ Dockerisation *(this phase)*
 11. ⬜ CI/CD with GitHub Actions
 12. ⬜ Terraform & AWS infrastructure
 13. ⬜ Cloud deployment
