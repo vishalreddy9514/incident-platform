@@ -6,7 +6,7 @@
 > is running) so it can never drift from the code. This document adds
 > narrative context around it.
 
-## Implemented so far (Phase 6)
+## Implemented so far (Phase 8)
 
 ### Auth (public, rate-limited on login/register)
 
@@ -66,6 +66,22 @@
 | Method | Path | Auth | Notes |
 |---|---|---|---|
 | `GET` | `/actuator/health` | none | Health check |
+
+### AI service (internal — not called by the frontend, see ADR-0001)
+
+Runs as a separate FastAPI process (`ai-service/`), reachable only from the
+Spring Boot backend. Base URL configured via `AI_SERVICE_BASE_URL`.
+
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| `POST` | `/internal/v1/analyse` | `X-Internal-Token` header | `{ title, description, category? }` -> `{ suggestedCategory, predictedPriority, summary, keywords[], suggestedSteps[], modelUsed }` (FR-13) |
+| `GET` | `/internal/v1/health` | none | `{ status, provider }` |
+
+The provider behind `/analyse` is runtime-selectable (`LLM_PROVIDER=mock`
+default, or `openai`) — see ADR-0011. `POST /api/v1/incidents/{id}/ai-analysis`
+(the backend-facing endpoint that calls this and persists an `AiAnalysis`
+record) is not yet built — the `AiAnalysis` entity/table/repository exist,
+but the backend controller/service wiring is a follow-up to this phase.
 
 ## Status transition rules
 
