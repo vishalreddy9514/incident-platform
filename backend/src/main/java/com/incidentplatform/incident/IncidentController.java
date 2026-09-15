@@ -1,5 +1,7 @@
 package com.incidentplatform.incident;
 
+import com.incidentplatform.ai.AiAnalysisService;
+import com.incidentplatform.ai.dto.AiAnalysisResponse;
 import com.incidentplatform.common.dto.PageResponse;
 import com.incidentplatform.domain.incident.IncidentPriority;
 import com.incidentplatform.domain.incident.IncidentStatus;
@@ -42,9 +44,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class IncidentController {
 
   private final IncidentService incidentService;
+  private final AiAnalysisService aiAnalysisService;
 
-  public IncidentController(IncidentService incidentService) {
+  public IncidentController(IncidentService incidentService, AiAnalysisService aiAnalysisService) {
     this.incidentService = incidentService;
+    this.aiAnalysisService = aiAnalysisService;
   }
 
   @PostMapping
@@ -129,5 +133,19 @@ public class IncidentController {
       @Valid @RequestBody EscalateRequest request,
       @AuthenticationPrincipal CustomUserDetails principal) {
     return incidentService.escalate(id, request, principal);
+  }
+
+  /** Any user who can view the incident may request analysis (UC-5); ownership/role rules are
+   * the same "can view this incident" check every other nested read/write here applies. */
+  @PostMapping("/{id}/ai-analysis")
+  public AiAnalysisResponse requestAiAnalysis(
+      @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails principal) {
+    return aiAnalysisService.analyse(id, principal);
+  }
+
+  @GetMapping("/{id}/ai-analysis")
+  public AiAnalysisResponse getLatestAiAnalysis(
+      @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails principal) {
+    return aiAnalysisService.getLatest(id, principal);
   }
 }
