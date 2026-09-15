@@ -294,3 +294,56 @@ pages/        One component per route
   reachable — so this app was genuinely `npm install`'d, type-checked
   (`tsc -b`), linted, tested (Vitest + Testing Library + MSW), and
   production-built (`vite build`), not just written and hoped for.
+
+## AI service (Phase 8)
+
+FastAPI app under `ai-service/app/`, implementing the internal contract from
+Phase 1 §9.2 exactly:
+
+```
+POST /internal/v1/analyse   { title, description, category? }
+                             -> { suggestedCategory, predictedPriority, summary,
+                                  keywords[], suggestedSteps[], modelUsed }
+GET  /internal/v1/health    -> { status, provider }
+```
+
+```
+app/
+  main.py               FastAPI app instance, router registration
+  config.py             Settings (pydantic-settings), env-var backed
+  schemas.py            AnalyseRequest/AnalyseResponse/HealthResponse
+  security.py           Shared internal-token auth dependency
+  routers/analyse.py    The two endpoints above
+  providers/
+    base.py             AnalysisProvider abstraction
+    mock.py             Default: deterministic keyword-based heuristic
+    openai_provider.py  Real provider: OpenAI Chat Completions over httpx
+    factory.py           Selects a provider from Settings.llm_provider
+    errors.py           AnalysisProviderError -> HTTP 502
+```
+
+- **Provider abstraction, mock by default** (ADR-0011): `LLM_PROVIDER`
+  selects between a zero-dependency rule-based `MockAnalysisProvider` (the
+  default, and the only provider exercised in CI/tests) and a real
+  `OpenAIAnalysisProvider`. Everything above `AnalysisProvider` — the
+  router, the tests that exercise the endpoint — depends only on the
+  abstract interface.
+- **Service-to-service auth**: `/internal/v1/analyse` requires an
+  `X-Internal-Token` header matching `AI_SERVICE_INTERNAL_TOKEN`
+  (`app/security.py`), matching the shared-secret design in Phase 1 §10 and
+  the backend's `app.ai-service.internal-token` config. `/internal/v1/health`
+  is intentionally unauthenticated (health checks).
+- **camelCase on the wire**: request/response models use pydantic's
+  `to_camel` alias generator so the JSON shape matches the Java backend's
+  DTO convention exactly (`suggestedCategory`, not `suggested_category`),
+  even though the Python code itself stays snake_case internally.
+- **Failure isolation carried one level further**: a broken/unreachable
+  real LLM call raises `AnalysisProviderError`, mapped to `502 Bad
+  Gateway` — distinguishable from the AI service itself being down, which
+  is what FR-15's backend-side graceful degradation is built against.
+- **Verified with a real run**: `pytest` (29 tests — endpoint auth/
+  validation, mock provider heuristics, provider factory selection, and
+  the OpenAI provider's response parsing/error handling with the HTTP
+  call mocked), `ruff check`, `black --check`, and `mypy` all run clean;
+  the app was also started with `uvicorn` and hit with real HTTP requests
+  to confirm the shape above, not just asserted in tests.

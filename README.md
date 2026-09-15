@@ -2,8 +2,8 @@
 
 An enterprise-style internal engineering service desk: users raise incidents, engineers triage and resolve them, admins manage the platform — with an optional AI-assisted analysis service (classification, summarisation, keyword extraction, suggested troubleshooting steps) sitting alongside the core workflow, not at the centre of it.
 
-> **Status: Phase 7 of 16 — React/TypeScript frontend.**
-> The application does not yet do anything. See [`docs/decisions/`](docs/decisions) for the reasoning behind key choices and the phase-by-phase build log in commit history.
+> **Status: Phase 8 of 16 — Python AI microservice.**
+> Core auth/RBAC, incident management, dashboards, and the frontend are built and runnable (Phases 3-7); the AI service now runs independently too, but isn't yet wired end-to-end into the backend. See [`docs/decisions/`](docs/decisions) for the reasoning behind key choices and the phase-by-phase build log in commit history.
 
 ## Why this project exists
 
@@ -71,6 +71,7 @@ Non-obvious design choices are recorded as Architecture Decision Records in [`do
 - [ADR-0008](docs/decisions/0008-jwt-refresh-token-strategy.md) — Opaque Redis-backed refresh tokens + manual credential verification
 - [ADR-0009](docs/decisions/0009-admin-bootstrap-strategy.md) — Idempotent startup runner for the first ADMIN account
 - [ADR-0010](docs/decisions/0010-frontend-token-storage.md) — Refresh token in localStorage, access token in memory only
+- [ADR-0011](docs/decisions/0011-pluggable-analysis-provider.md) — Runtime-selectable analysis provider (mock default, real LLM optional)
 
 ## Running the backend locally
 
@@ -128,6 +129,43 @@ npm run lint           # ESLint
 npm run format:check   # Prettier
 ```
 
+## Running the AI service locally
+
+Requires Python 3.12+ (a slightly older 3.11 also works for local dev/testing).
+
+```bash
+cd ai-service
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+Defaults to a deterministic mock analysis provider — no API key needed (see
+[ADR-0011](docs/decisions/0011-pluggable-analysis-provider.md)):
+
+```bash
+curl http://localhost:8000/internal/v1/health
+
+curl -X POST http://localhost:8000/internal/v1/analyse \
+  -H "Content-Type: application/json" \
+  -H "X-Internal-Token: change-me-shared-internal-token" \
+  -d '{"title":"VPN keeps disconnecting","description":"My VPN drops every few minutes and I cannot reach internal services."}'
+```
+
+To use a real hosted model instead, set `LLM_PROVIDER=openai`,
+`LLM_API_KEY=...`, and `LLM_MODEL=...` in your `.env` before starting the
+service. The Spring Boot backend does not yet call this endpoint
+end-to-end (that wiring — `POST /api/v1/incidents/{id}/ai-analysis` — is a
+follow-up); the service is independently runnable and tested in the
+meantime.
+
+```bash
+ruff check .           # lint
+black --check .        # format check
+mypy app                # type check
+pytest                  # unit + API tests (mock provider only — no network/API key needed)
+```
+
 ## Roadmap
 
 1. ✅ Requirements & architecture
@@ -136,8 +174,8 @@ npm run format:check   # Prettier
 4. ✅ Spring Boot backend skeleton
 5. ✅ Authentication & RBAC
 6. ✅ Incident management functionality
-7. ✅ React/TypeScript frontend *(this phase)*
-8. ⬜ Python AI microservice
+7. ✅ React/TypeScript frontend
+8. ✅ Python AI microservice *(this phase)*
 9. ⬜ Testing hardening
 10. ⬜ Dockerisation
 11. ⬜ CI/CD with GitHub Actions
