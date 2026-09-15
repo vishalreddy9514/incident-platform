@@ -36,3 +36,11 @@ testpaths = ["tests"]
 pythonpath = ["."]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+source = ["app"]
+
+[tool.coverage.report]
+# Reporting only, no minimum-ratio gate - matches the backend's JaCoCo setup and the project's
+# "meaningful coverage, not a percentage chased for its own sake" stance (Phase 1 section 11).
+show_missing = true

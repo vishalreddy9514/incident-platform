@@ -24,9 +24,13 @@ import com.incidentplatform.repository.UserRepository;
 import com.incidentplatform.security.CustomUserDetails;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
@@ -157,6 +161,31 @@ class IncidentServiceTest {
 
     UpdateIncidentRequest request =
         new UpdateIncidentRequest(null, null, null, IncidentStatus.OPEN, null, null);
+
+    assertThatThrownBy(() -> service.update(10L, request, engineerPrincipal))
+        .isInstanceOf(ApiException.class)
+        .extracting(ex -> ((ApiException) ex).getErrorCode())
+        .isEqualTo("INVALID_STATUS_TRANSITION");
+  }
+
+  private static Stream<Arguments> disallowedTransitions() {
+    return Stream.of(
+        Arguments.of(IncidentStatus.OPEN, IncidentStatus.RESOLVED),
+        Arguments.of(IncidentStatus.ESCALATED, IncidentStatus.OPEN),
+        Arguments.of(IncidentStatus.ESCALATED, IncidentStatus.CLOSED),
+        Arguments.of(IncidentStatus.RESOLVED, IncidentStatus.OPEN),
+        Arguments.of(IncidentStatus.RESOLVED, IncidentStatus.ESCALATED));
+  }
+
+  @ParameterizedTest
+  @MethodSource("disallowedTransitions")
+  void everyDisallowedTransitionIsRejected(IncidentStatus from, IncidentStatus to) {
+    Incident incident = new Incident("Title", "Description", category, creator);
+    incident.setStatus(from);
+    when(incidentRepository.findById(10L)).thenReturn(Optional.of(incident));
+    when(userRepository.findById(any())).thenReturn(Optional.of(engineer));
+
+    UpdateIncidentRequest request = new UpdateIncidentRequest(null, null, null, to, null, null);
 
     assertThatThrownBy(() -> service.update(10L, request, engineerPrincipal))
         .isInstanceOf(ApiException.class)
