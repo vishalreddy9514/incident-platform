@@ -128,6 +128,19 @@ public class IncidentService {
     return IncidentMapper.toDetail(incident);
   }
 
+  /**
+   * Exposed for other services (currently {@code AiAnalysisService}) that need the entity itself,
+   * not the DTO, but must apply the exact same existence + ownership rule as every other read path
+   * here — reusing {@link #requireIncident} and {@link #assertCanView} rather than duplicating the
+   * check.
+   */
+  @Transactional(readOnly = true)
+  public Incident requireViewableIncident(Long id, CustomUserDetails principal) {
+    Incident incident = requireIncident(id);
+    assertCanView(incident, principal);
+    return incident;
+  }
+
   @Transactional
   public IncidentDetailResponse update(
       Long id, UpdateIncidentRequest request, CustomUserDetails principal) {

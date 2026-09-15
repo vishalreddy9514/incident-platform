@@ -9,11 +9,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.incidentplatform.ai.AiAnalysisService;
+import com.incidentplatform.ai.dto.AiAnalysisResponse;
 import com.incidentplatform.domain.incident.IncidentPriority;
 import com.incidentplatform.domain.incident.IncidentSeverity;
 import com.incidentplatform.domain.incident.IncidentStatus;
 import com.incidentplatform.incident.dto.CreateIncidentRequest;
 import com.incidentplatform.incident.dto.IncidentDetailResponse;
+import java.time.OffsetDateTime;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -35,6 +39,7 @@ class IncidentControllerTest {
   @Autowired private ObjectMapper objectMapper;
 
   @MockBean private IncidentService incidentService;
+  @MockBean private AiAnalysisService aiAnalysisService;
 
   @Test
   void createReturns201WithTheCreatedIncident() throws Exception {
@@ -122,5 +127,49 @@ class IncidentControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(5))
         .andExpect(jsonPath("$.categoryName").value("Hardware"));
+  }
+
+  @Test
+  void requestAiAnalysisReturnsTheAnalysis() throws Exception {
+    AiAnalysisResponse response =
+        new AiAnalysisResponse(
+            1L,
+            5L,
+            "Network",
+            IncidentPriority.HIGH,
+            "User cannot connect to the VPN.",
+            List.of("vpn", "connection"),
+            List.of("Restart VPN client"),
+            "mock-heuristic-v1",
+            OffsetDateTime.now());
+    when(aiAnalysisService.analyse(eq(5L), any())).thenReturn(response);
+
+    mockMvc
+        .perform(post("/api/v1/incidents/5/ai-analysis"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.suggestedCategory").value("Network"))
+        .andExpect(jsonPath("$.predictedPriority").value("HIGH"))
+        .andExpect(jsonPath("$.keywords[0]").value("vpn"));
+  }
+
+  @Test
+  void getLatestAiAnalysisReturnsTheStoredAnalysis() throws Exception {
+    AiAnalysisResponse response =
+        new AiAnalysisResponse(
+            1L,
+            5L,
+            "Network",
+            IncidentPriority.HIGH,
+            "User cannot connect to the VPN.",
+            List.of("vpn"),
+            List.of("Restart VPN client"),
+            "mock-heuristic-v1",
+            OffsetDateTime.now());
+    when(aiAnalysisService.getLatest(eq(5L), any())).thenReturn(response);
+
+    mockMvc
+        .perform(get("/api/v1/incidents/5/ai-analysis"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.modelUsed").value("mock-heuristic-v1"));
   }
 }

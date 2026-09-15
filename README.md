@@ -106,6 +106,10 @@ curl -X POST http://localhost:8080/api/v1/incidents \
 # List/search incidents, view dashboard metrics, etc.
 curl "http://localhost:8080/api/v1/incidents?status=OPEN" -H "Authorization: Bearer <accessToken>"
 curl http://localhost:8080/api/v1/dashboard/metrics -H "Authorization: Bearer <accessToken>"
+
+# Request AI analysis for an incident (requires ai-service running — see below)
+curl -X POST http://localhost:8080/api/v1/incidents/1/ai-analysis -H "Authorization: Bearer <accessToken>"
+curl http://localhost:8080/api/v1/incidents/1/ai-analysis -H "Authorization: Bearer <accessToken>"
 ```
 
 ## Running the frontend locally
@@ -154,10 +158,9 @@ curl -X POST http://localhost:8000/internal/v1/analyse \
 
 To use a real hosted model instead, set `LLM_PROVIDER=openai`,
 `LLM_API_KEY=...`, and `LLM_MODEL=...` in your `.env` before starting the
-service. The Spring Boot backend does not yet call this endpoint
-end-to-end (that wiring — `POST /api/v1/incidents/{id}/ai-analysis` — is a
-follow-up); the service is independently runnable and tested in the
-meantime.
+service. The Spring Boot backend now calls this end-to-end via
+`POST`/`GET /api/v1/incidents/{id}/ai-analysis` (see `com.incidentplatform.ai`
+and `docs/architecture.md`).
 
 ```bash
 ruff check .           # lint
