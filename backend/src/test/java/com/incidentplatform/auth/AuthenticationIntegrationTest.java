@@ -14,6 +14,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -131,6 +132,84 @@ class AuthenticationIntegrationTest {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     assertThat(response.getBody()).contains("FORBIDDEN");
+  }
+
+  /**
+   * Registration only ever creates USER accounts (FR-4), so these denial tests cover the one role
+   * reachable without a separately-bootstrapped ADMIN — the same constraint {@link
+   * #regularUserCannotAccessTheAdminOnlyUserListEndpoint} already works within.
+   */
+  private HttpHeaders headersForANewlyRegisteredUser(String email) {
+    ResponseEntity<AuthResponse> registerResponse =
+        restTemplate.postForEntity(
+            url("/api/v1/auth/register"),
+            new RegisterRequest(email, "password123", "A User"),
+            AuthResponse.class);
+    HttpHeaders headers = new HttpHeaders();
+    headers.setBearerAuth(registerResponse.getBody().accessToken());
+    return headers;
+  }
+
+  @Test
+  void regularUserCannotCreateACategory() {
+    HttpHeaders headers = headersForANewlyRegisteredUser("category-create-user@example.com");
+    String body = "{\"name\":\"Hardware\",\"description\":\"Physical equipment issues\"}";
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    ResponseEntity<String> response =
+        restTemplate.exchange(
+            url("/api/v1/categories"),
+            HttpMethod.POST,
+            new HttpEntity<>(body, headers),
+            String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+  }
+
+  @Test
+  void regularUserCannotUpdateACategory() {
+    HttpHeaders headers = headersForANewlyRegisteredUser("category-update-user@example.com");
+    String body = "{\"name\":\"Hardware\",\"description\":\"Updated\",\"isActive\":true}";
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    ResponseEntity<String> response =
+        restTemplate.exchange(
+            url("/api/v1/categories/1"),
+            HttpMethod.PUT,
+            new HttpEntity<>(body, headers),
+            String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+  }
+
+  @Test
+  void regularUserCannotCreateATeam() {
+    HttpHeaders headers = headersForANewlyRegisteredUser("team-create-user@example.com");
+    String body = "{\"name\":\"Platform\",\"description\":\"Core platform team\"}";
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    ResponseEntity<String> response =
+        restTemplate.exchange(
+            url("/api/v1/teams"), HttpMethod.POST, new HttpEntity<>(body, headers), String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+  }
+
+  @Test
+  void regularUserCannotChangeAnyUsersRole() {
+    // @PreAuthorize("hasRole('ADMIN')") rejects before the method body (and the self-role-edit
+    // check UserService.updateRole applies) ever runs, so the target ID doesn't need to be real.
+    HttpHeaders headers = headersForANewlyRegisteredUser("role-caller-user@example.com");
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    ResponseEntity<String> response =
+        restTemplate.exchange(
+            url("/api/v1/users/999999/role"),
+            HttpMethod.PATCH,
+            new HttpEntity<>("{\"role\":\"ENGINEER\"}", headers),
+            String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
   }
 
   @Test

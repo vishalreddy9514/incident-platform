@@ -17,5 +17,12 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: ["./src/test-setup.ts"],
+    coverage: {
+      // Reporting only, no minimum-ratio gate - matches the other two services' coverage
+      // setup and the project's "meaningful coverage, not a percentage chased for its own
+      // sake" stance (Phase 1 section 11).
+      provider: "v8",
+      reporter: ["text", "html"],
+    },
   },
 });
