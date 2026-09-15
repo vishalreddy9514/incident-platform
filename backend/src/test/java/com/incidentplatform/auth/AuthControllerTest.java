@@ -11,6 +11,8 @@ import com.incidentplatform.auth.dto.AuthResponse;
 import com.incidentplatform.auth.dto.LoginRequest;
 import com.incidentplatform.auth.dto.RegisterRequest;
 import com.incidentplatform.domain.user.Role;
+import com.incidentplatform.security.JwtAuthenticationFilter;
+import com.incidentplatform.security.RateLimitingFilter;
 import com.incidentplatform.user.dto.UserResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +36,13 @@ class AuthControllerTest {
   @Autowired private ObjectMapper objectMapper;
 
   @MockBean private AuthService authService;
+
+  // @WebMvcTest still constructs Filter beans even though addFilters = false means they're never
+  // registered in the chain — these are @Component-annotated Filters, so Spring tries to build
+  // the real ones, whose constructors need beans (JwtService, StringRedisTemplate) this slice
+  // doesn't provide.
+  @MockBean private JwtAuthenticationFilter jwtAuthenticationFilter;
+  @MockBean private RateLimitingFilter rateLimitingFilter;
 
   @Test
   void registerReturns201WithTokensOnValidRequest() throws Exception {

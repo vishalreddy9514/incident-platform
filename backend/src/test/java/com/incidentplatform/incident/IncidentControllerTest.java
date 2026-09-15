@@ -16,6 +16,8 @@ import com.incidentplatform.domain.incident.IncidentSeverity;
 import com.incidentplatform.domain.incident.IncidentStatus;
 import com.incidentplatform.incident.dto.CreateIncidentRequest;
 import com.incidentplatform.incident.dto.IncidentDetailResponse;
+import com.incidentplatform.security.JwtAuthenticationFilter;
+import com.incidentplatform.security.RateLimitingFilter;
 import java.time.OffsetDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -40,6 +42,13 @@ class IncidentControllerTest {
 
   @MockBean private IncidentService incidentService;
   @MockBean private AiAnalysisService aiAnalysisService;
+
+  // @WebMvcTest still constructs Filter beans even though addFilters = false means they're
+  // never registered in the chain (that flag only skips registering them into MockMvc, not
+  // bean creation) — these are @Component-annotated Filters, so Spring tries to build the real
+  // ones, whose constructors need JwtService/StringRedisTemplate that this slice doesn't provide.
+  @MockBean private JwtAuthenticationFilter jwtAuthenticationFilter;
+  @MockBean private RateLimitingFilter rateLimitingFilter;
 
   @Test
   void createReturns201WithTheCreatedIncident() throws Exception {

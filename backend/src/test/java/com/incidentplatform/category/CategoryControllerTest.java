@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.incidentplatform.category.dto.CategoryResponse;
+import com.incidentplatform.security.JwtAuthenticationFilter;
+import com.incidentplatform.security.RateLimitingFilter;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,13 @@ class CategoryControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockBean private CategoryService categoryService;
+
+  // @WebMvcTest still constructs Filter beans even though addFilters = false means they're never
+  // registered in the chain — these are @Component-annotated Filters, so Spring tries to build
+  // the real ones, whose constructors need beans (JwtService, StringRedisTemplate) this slice
+  // doesn't provide.
+  @MockBean private JwtAuthenticationFilter jwtAuthenticationFilter;
+  @MockBean private RateLimitingFilter rateLimitingFilter;
 
   @Test
   void getCategoriesReturnsOkWithJsonBody() throws Exception {
