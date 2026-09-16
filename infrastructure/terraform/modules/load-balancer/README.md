@@ -1,5 +1,5 @@
-Terraform module: load-balancer
+# Terraform module: load-balancer
 
-Built in Phase 12 - Terraform & AWS infrastructure. Scaffolded now so the
-module structure documented in Phase 1 §14 is reflected in the repository
-from the start, rather than invented ad hoc later.
+An internet-facing ALB with a single HTTP listener: `/api/*` forwards to the backend target
+group, everything else to the frontend target group. No HTTPS/TLS yet — see ADR-0013 for why (no
+domain exists to issue a certificate against).

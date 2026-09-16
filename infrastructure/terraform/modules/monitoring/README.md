@@ -1,5 +1,7 @@
-Terraform module: monitoring
+# Terraform module: monitoring
 
-Built in Phase 12 - Terraform & AWS infrastructure. Scaffolded now so the
-module structure documented in Phase 1 §14 is reflected in the repository
-from the start, rather than invented ad hoc later.
+CloudWatch log groups for each ECS service's `awslogs` driver (required for the services to run
+at all, not optional), plus a small set of infrastructure-level alarms (ALB 5xx, unhealthy
+backend targets, low RDS free storage) into an SNS topic with no subscription yet. Wiring that
+topic to email/Slack/PagerDuty, and any application-level dashboards, is Phase 14
+(Observability & monitoring) scope, not built early to look more complete than it is.

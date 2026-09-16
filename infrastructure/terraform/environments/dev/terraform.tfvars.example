@@ -1,0 +1,14 @@
+# Copy to terraform.tfvars (git-ignored) and fill in real values, or supply
+# each as a TF_VAR_<name> environment variable instead - either way, never
+# commit real secrets here.
+
+availability_zones = ["eu-west-2a", "eu-west-2b"]
+
+db_password               = "change-me"
+jwt_secret                 = "change-me-to-a-long-random-string-at-least-32-bytes-for-hs256"
+admin_bootstrap_password  = "change-me-admin-password"
+ai_service_internal_token = "change-me-shared-internal-token"
+
+# Optional - only needed if llm_provider is set to something other than
+# "mock" (see ADR-0011).
+# llm_api_key = "..."

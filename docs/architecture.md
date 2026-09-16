@@ -526,3 +526,68 @@ Two workflows, per ADR-0005's two-pipeline split:
   test files yet, only `tests/e2e/README.md`'s description of what it
   will eventually cover. Both are called out explicitly in `pr.yml`'s
   own comments and `docs/testing.md`, not silently skipped.
+
+## Terraform & AWS infrastructure (Phase 12)
+
+Structured exactly as Phase 1 §14 planned it:
+
+```
+infrastructure/terraform/
+├── bootstrap/            # one-time: S3 state bucket + DynamoDB lock table
+├── environments/
+│   └── dev/               # root module wiring every module together
+└── modules/
+    ├── networking/        # VPC, public/private subnets x2 AZ, single NAT, security groups
+    ├── iam/                # ECS execution role (shared) + one task role per service
+    ├── database/           # RDS Postgres, single-AZ, gp3, db.t4g.micro
+    ├── cache/              # ElastiCache Redis, single node, cache.t4g.micro
+    ├── ecs/                # ECR repos, cluster, task definitions, services, Cloud Map
+    ├── load-balancer/      # ALB, target groups, path-based routing
+    └── monitoring/         # CloudWatch log groups + a handful of infra alarms
+```
+
+- **This phase is Terraform written and validated, not applied.** No AWS account is wired into
+  this repository yet (that's Phase 13, "Cloud deployment") — every module and both root configs
+  (`bootstrap`, `environments/dev`) pass `terraform fmt -check` and `terraform validate` cleanly,
+  and a speculative `terraform plan` against the real AWS API (with deliberately invalid
+  credentials) resolves every module reference, every `jsonencode` container definition, and every
+  cross-module output wire-up correctly, failing only at the one point that genuinely requires a
+  real account: the AWS provider's own `GetCallerIdentity` call. That failure is the expected,
+  correct boundary of what can be verified without real infrastructure — not a gap glossed over.
+- **Security group chain matches the actual call graph, not a flat "allow everything internal"
+  rule**: `alb_sg -> {frontend_sg, backend_sg}`, `backend_sg -> {ai_service_sg, rds_sg, redis_sg}`.
+  The AI service's security group has no ingress from the ALB at all (it's never reachable from
+  the internet, matching how the backend actually calls it) and nothing has a route to
+  `rds_sg`/`redis_sg` except the backend — the AI service holds no database credentials and never
+  will, restated here in infrastructure the same way ADR-0001/Phase 1 §13 state it in application
+  design.
+- **The AI service is reached the way docker-compose's built-in DNS reaches it, translated to
+  ECS**: a Cloud Map private DNS namespace (`aws_service_discovery_private_dns_namespace`) gives
+  it a stable internal name (`ai-service.<project>-<environment>.internal`) that the backend task
+  definition's `AI_SERVICE_BASE_URL` points at — no ALB, no public exposure, the ECS/Fargate
+  equivalent of compose resolving `http://ai-service:8000`.
+- **IAM: one execution role, three task roles.** The execution role (what ECS itself uses to pull
+  images and inject secrets) is shared, since none of that is service-specific. Task roles (what
+  the *application code* runs as) are one per service and — for now — hold no permissions beyond
+  assuming the role at all: none of the three services call another AWS API at runtime yet. They
+  stay separate anyway so that a future need (e.g. the backend reading from S3 for attachment
+  storage) changes one role, not all three.
+- **A known, accepted rough edge: the frontend's API base URL is baked in at image build time**
+  (`frontend/Dockerfile`'s `VITE_API_BASE_URL` build arg — see Phase 7), not read at container
+  runtime. That means the ALB's DNS name has to be known *before* the frontend image that will
+  talk to it is built, which the very first `terraform apply` can't satisfy (the ALB doesn't exist
+  yet). First-time setup is therefore two steps: apply the infrastructure, note the ALB DNS name
+  from `terraform output alb_dns_name`, then build and push the frontend image with that value.
+  `docs/deployment.md` documents this explicitly. The permanent fix — a stable custom domain via
+  Route53, so the URL baked into the image never has to change across applies — is exactly the
+  kind of thing Phase 13's real cloud deployment (and ADR-0013's deferred TLS/domain work) is for.
+- **Cost-conscious by design, matching Phase 1 §13 explicitly**: a single NAT gateway (not one per
+  AZ), single-AZ RDS, a single-node ElastiCache cluster (not a replication group), `desired_count
+  = 1` per ECS service (no autoscaling policy yet — Phase 14 territory), and `deletion_protection
+  = false` / `skip_final_snapshot = true` on RDS so `terraform destroy` — the documented workflow
+  for tearing infrastructure down between demo sessions — actually works without a manual console
+  step first.
+- **See ADR-0013** for why the ALB has an HTTP listener only (no TLS yet — no domain exists to
+  issue a certificate against) and **ADR-0012** for why images will go to GHCR through Phase 12,
+  migrating to the ECR repositories this phase creates once Phase 13 wires up real deploy
+  credentials for `deploy.yml`.
