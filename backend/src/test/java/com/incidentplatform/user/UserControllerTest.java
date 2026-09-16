@@ -34,10 +34,10 @@ import org.springframework.test.web.servlet.MockMvc;
 /**
  * MVC slice test for request validation and response shape — security filters disabled, same
  * rationale as {@code CategoryControllerTest}. RBAC (list is ENGINEER/ADMIN-only, role update is
- * ADMIN-only) is covered end-to-end in {@code AuthenticationIntegrationTest}, not here — see
- * {@code TeamControllerTest}'s javadoc for why a slice test can't exercise {@code @PreAuthorize}.
- * {@code GET /me} needs {@code @AuthenticationPrincipal}, which requires a real security context
- * this slice doesn't build, so it's also left to the integration test.
+ * ADMIN-only) is covered end-to-end in {@code AuthenticationIntegrationTest}, not here — see {@code
+ * TeamControllerTest}'s javadoc for why a slice test can't exercise {@code @PreAuthorize}. {@code
+ * GET /me} needs {@code @AuthenticationPrincipal}, which requires a real security context this
+ * slice doesn't build, so it's also left to the integration test.
  */
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -57,7 +57,8 @@ class UserControllerTest {
 
   @Test
   void listUsersReturnsAPagedResult() throws Exception {
-    UserResponse user = new UserResponse(1L, "engineer@example.com", "Engineer", Role.ENGINEER, null, true);
+    UserResponse user =
+        new UserResponse(1L, "engineer@example.com", "Engineer", Role.ENGINEER, null, true);
     when(userService.listUsers(eq(null), any()))
         .thenReturn(PageResponse.of(new PageImpl<>(List.of(user), PageRequest.of(0, 20), 1)));
 
@@ -79,15 +80,14 @@ class UserControllerTest {
   void updateRoleReturns400WhenRoleIsMissing() throws Exception {
     mockMvc
         .perform(
-            patch("/api/v1/users/5/role")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{}"))
+            patch("/api/v1/users/5/role").contentType(MediaType.APPLICATION_JSON).content("{}"))
         .andExpect(status().isBadRequest());
   }
 
   @Test
   void updateRoleReturnsTheUpdatedUserGivenAValidRequest() throws Exception {
-    UserResponse updated = new UserResponse(5L, "user@example.com", "A User", Role.ENGINEER, null, true);
+    UserResponse updated =
+        new UserResponse(5L, "user@example.com", "A User", Role.ENGINEER, null, true);
     when(userService.updateRole(eq(5L), any(RoleUpdateRequest.class), any())).thenReturn(updated);
 
     // updateRole's @AuthenticationPrincipal CustomUserDetails needs a principal of that exact

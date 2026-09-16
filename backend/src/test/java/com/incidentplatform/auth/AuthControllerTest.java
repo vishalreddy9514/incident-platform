@@ -23,10 +23,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * MVC slice test for request validation and response shape. Security filters disabled (see
- * {@link com.incidentplatform.category.CategoryControllerTest} for the same rationale) — the
- * fact that these endpoints are genuinely public end-to-end is verified in
- * AuthenticationIntegrationTest against the real SecurityConfig.
+ * MVC slice test for request validation and response shape. Security filters disabled (see {@link
+ * com.incidentplatform.category.CategoryControllerTest} for the same rationale) — the fact that
+ * these endpoints are genuinely public end-to-end is verified in AuthenticationIntegrationTest
+ * against the real SecurityConfig.
  */
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -49,7 +49,8 @@ class AuthControllerTest {
     UserResponse userResponse =
         new UserResponse(1L, "new@example.com", "New User", Role.USER, null, true);
     when(authService.register(any()))
-        .thenReturn(new AuthResponse("access-token", "refresh-token", "Bearer", 900L, userResponse));
+        .thenReturn(
+            new AuthResponse("access-token", "refresh-token", "Bearer", 900L, userResponse));
 
     RegisterRequest request = new RegisterRequest("new@example.com", "password123", "New User");
 
@@ -93,7 +94,8 @@ class AuthControllerTest {
     UserResponse userResponse =
         new UserResponse(1L, "user@example.com", "User", Role.USER, null, true);
     when(authService.login(any()))
-        .thenReturn(new AuthResponse("access-token", "refresh-token", "Bearer", 900L, userResponse));
+        .thenReturn(
+            new AuthResponse("access-token", "refresh-token", "Bearer", 900L, userResponse));
 
     LoginRequest request = new LoginRequest("user@example.com", "correct-password");
 

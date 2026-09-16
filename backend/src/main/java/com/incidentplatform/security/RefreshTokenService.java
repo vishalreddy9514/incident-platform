@@ -8,10 +8,10 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 /**
- * Refresh tokens are opaque random strings stored server-side in Redis (key → user id, with a
- * TTL), not JWTs — see ADR-0008 for the reasoning. This makes them genuinely revocable: {@link
- * #validateAndRevoke(String)} deletes the token as part of validating it, so each refresh token
- * can only ever be used once (rotation), and {@link #revoke(String)} powers logout.
+ * Refresh tokens are opaque random strings stored server-side in Redis (key → user id, with a TTL),
+ * not JWTs — see ADR-0008 for the reasoning. This makes them genuinely revocable: {@link
+ * #validateAndRevoke(String)} deletes the token as part of validating it, so each refresh token can
+ * only ever be used once (rotation), and {@link #revoke(String)} powers logout.
  */
 @Service
 public class RefreshTokenService {
@@ -22,8 +22,7 @@ public class RefreshTokenService {
   private final Duration ttl;
 
   public RefreshTokenService(
-      StringRedisTemplate redisTemplate,
-      @Value("${app.jwt.refresh-token-ttl-days}") long ttlDays) {
+      StringRedisTemplate redisTemplate, @Value("${app.jwt.refresh-token-ttl-days}") long ttlDays) {
     this.redisTemplate = redisTemplate;
     this.ttl = Duration.ofDays(ttlDays);
   }

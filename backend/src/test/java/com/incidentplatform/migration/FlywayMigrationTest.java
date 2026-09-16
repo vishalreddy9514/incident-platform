@@ -18,13 +18,13 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * Verifies the Flyway migrations in {@code db/migration} apply cleanly against a real
- * PostgreSQL instance, and that the schema behaves the way Phase 3 designed it to: role/status
- * CHECK constraints reject invalid values, and the append-only tables genuinely refuse UPDATE
- * and DELETE rather than merely documenting that intent.
+ * Verifies the Flyway migrations in {@code db/migration} apply cleanly against a real PostgreSQL
+ * instance, and that the schema behaves the way Phase 3 designed it to: role/status CHECK
+ * constraints reject invalid values, and the append-only tables genuinely refuse UPDATE and DELETE
+ * rather than merely documenting that intent.
  *
- * <p>Deliberately does not boot the Spring context (that arrives in Phase 4) — this test only
- * needs Flyway and a JDBC connection, so it stays fast and focused on the migrations themselves.
+ * <p>Deliberately does not boot the Spring context (that arrives in Phase 4) — this test only needs
+ * Flyway and a JDBC connection, so it stays fast and focused on the migrations themselves.
  */
 @Testcontainers
 class FlywayMigrationTest {
@@ -117,8 +117,7 @@ class FlywayMigrationTest {
               try (Connection conn = dataSource.getConnection();
                   Statement stmt = conn.createStatement()) {
                 stmt.executeUpdate(
-                    "UPDATE incident_history SET new_value = 'TAMPERED' WHERE id = "
-                        + historyId);
+                    "UPDATE incident_history SET new_value = 'TAMPERED' WHERE id = " + historyId);
               }
             })
         .isInstanceOf(SQLException.class)

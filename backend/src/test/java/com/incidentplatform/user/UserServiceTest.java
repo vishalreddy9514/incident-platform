@@ -47,14 +47,16 @@ class UserServiceTest {
   void getProfileThrowsWhenUserDoesNotExist() {
     when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> service().getProfile(99L)).isInstanceOf(ResourceNotFoundException.class);
+    assertThatThrownBy(() -> service().getProfile(99L))
+        .isInstanceOf(ResourceNotFoundException.class);
   }
 
   @Test
   void listUsersMapsAPagedResult() {
     User user = new User("admin@example.com", "hashed", "Admin", Role.ADMIN);
     var pageRequest = PageRequest.of(0, 20);
-    when(userRepository.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(user), pageRequest, 1));
+    when(userRepository.findAll(pageRequest))
+        .thenReturn(new PageImpl<>(List.of(user), pageRequest, 1));
 
     var response = service().listUsers(null, pageRequest);
 

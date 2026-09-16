@@ -15,10 +15,10 @@ import org.hibernate.annotations.CreationTimestamp;
 
 /**
  * Maps to the {@code incident_history} table (migration V8). Deliberately has no setters beyond
- * construction — the database itself rejects UPDATE/DELETE on this table (see the
- * append-only trigger in V8), and the entity is written to match: nothing in the Java layer
- * offers a way to mutate a persisted row, so the append-only design is reflected in both places,
- * not just enforced silently at the database.
+ * construction — the database itself rejects UPDATE/DELETE on this table (see the append-only
+ * trigger in V8), and the entity is written to match: nothing in the Java layer offers a way to
+ * mutate a persisted row, so the append-only design is reflected in both places, not just enforced
+ * silently at the database.
  */
 @Entity
 @Table(name = "incident_history")

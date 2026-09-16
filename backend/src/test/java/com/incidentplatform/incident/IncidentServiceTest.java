@@ -197,10 +197,10 @@ class IncidentServiceTest {
   void assigningToARegularUserIsRejected() {
     Incident incident = new Incident("Title", "Description", category, creator);
     when(incidentRepository.findById(10L)).thenReturn(Optional.of(incident));
-    when(userRepository.findById(99L)).thenReturn(Optional.of(creator)); // a USER, not ENGINEER/ADMIN
+    when(userRepository.findById(99L))
+        .thenReturn(Optional.of(creator)); // a USER, not ENGINEER/ADMIN
 
-    assertThatThrownBy(
-            () -> service.assign(10L, new AssignRequest(99L), engineerPrincipal))
+    assertThatThrownBy(() -> service.assign(10L, new AssignRequest(99L), engineerPrincipal))
         .isInstanceOf(ApiException.class)
         .extracting(ex -> ((ApiException) ex).getErrorCode())
         .isEqualTo("INVALID_ASSIGNEE");

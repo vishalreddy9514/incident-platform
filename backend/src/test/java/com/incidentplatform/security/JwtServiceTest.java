@@ -30,7 +30,8 @@ class JwtServiceTest {
   @Test
   void rejectsATokenSignedWithADifferentKey() {
     JwtService issuer = new JwtService(TEST_SECRET, 15);
-    JwtService verifier = new JwtService("a-completely-different-secret-key-also-over-32-bytes", 15);
+    JwtService verifier =
+        new JwtService("a-completely-different-secret-key-also-over-32-bytes", 15);
 
     String token = issuer.generateAccessToken(1L, "user@example.com", Role.USER);
 

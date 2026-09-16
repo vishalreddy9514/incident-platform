@@ -10,10 +10,10 @@ import org.springframework.data.jpa.domain.Specification;
 
 /**
  * Composable filters for {@code GET /api/v1/incidents}. Specifications are the right tool here
- * rather than a derived-query method per filter combination (FR-6 needs status, priority,
- * category, assignee, and role-based ownership scoping to combine freely) — a
- * {@code findByStatusAndPriorityAndCategory...} method explosion doesn't scale with the number
- * of optional filters, while a single composed {@link Specification} does.
+ * rather than a derived-query method per filter combination (FR-6 needs status, priority, category,
+ * assignee, and role-based ownership scoping to combine freely) — a {@code
+ * findByStatusAndPriorityAndCategory...} method explosion doesn't scale with the number of optional
+ * filters, while a single composed {@link Specification} does.
  */
 final class IncidentSpecifications {
 

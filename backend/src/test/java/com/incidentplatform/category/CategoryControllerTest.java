@@ -22,9 +22,9 @@ import org.springframework.test.web.servlet.MockMvc;
  * Web-layer slice test: only the MVC infrastructure and {@link CategoryController} are loaded, no
  * database. Security filters are disabled ({@code addFilters = false}) since this slice tests
  * controller/response-shape behaviour, not authorisation rules — those are covered end-to-end
- * against the real {@code SecurityConfig} in {@code AuthenticationIntegrationTest} (Phase 5),
- * which is a more faithful way to test authorisation than re-wiring every security filter bean
- * into a narrow MVC slice.
+ * against the real {@code SecurityConfig} in {@code AuthenticationIntegrationTest} (Phase 5), which
+ * is a more faithful way to test authorisation than re-wiring every security filter bean into a
+ * narrow MVC slice.
  */
 @WebMvcTest(CategoryController.class)
 @AutoConfigureMockMvc(addFilters = false)

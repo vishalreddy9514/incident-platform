@@ -18,14 +18,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * Reads a {@code Bearer} token from the {@code Authorization} header, validates it via {@link
- * JwtService}, and — if valid — loads the referenced user via {@link CustomUserDetailsService}
- * and populates the {@link SecurityContextHolder} so downstream {@code @PreAuthorize} checks and
- * {@code anyRequest().authenticated()} work.
+ * JwtService}, and — if valid — loads the referenced user via {@link CustomUserDetailsService} and
+ * populates the {@link SecurityContextHolder} so downstream {@code @PreAuthorize} checks and {@code
+ * anyRequest().authenticated()} work.
  *
- * <p>Any failure here (missing header, malformed/expired token, unknown user, deactivated
- * account) is treated as "request stays unauthenticated" rather than an error — the request
- * proceeds down the filter chain and Spring Security's own authorization rules then correctly
- * reject it with 401/403 via {@link RestAuthenticationEntryPoint}/{@link RestAccessDeniedHandler}.
+ * <p>Any failure here (missing header, malformed/expired token, unknown user, deactivated account)
+ * is treated as "request stays unauthenticated" rather than an error — the request proceeds down
+ * the filter chain and Spring Security's own authorization rules then correctly reject it with
+ * 401/403 via {@link RestAuthenticationEntryPoint}/{@link RestAccessDeniedHandler}.
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {

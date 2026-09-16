@@ -18,10 +18,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * Simple fixed-window rate limiter, applied only to the credential-guessing-sensitive auth
- * endpoints (login, register) per Phase 1 §10 — not applied globally, since most of the API
- * doesn't need it and blanket rate limiting would just be friction. Redis {@code INCR} + {@code
- * EXPIRE} gives an atomic-enough counter for this purpose without needing a dedicated rate-limit
- * library.
+ * endpoints (login, register) per Phase 1 §10 — not applied globally, since most of the API doesn't
+ * need it and blanket rate limiting would just be friction. Redis {@code INCR} + {@code EXPIRE}
+ * gives an atomic-enough counter for this purpose without needing a dedicated rate-limit library.
  */
 @Component
 public class RateLimitingFilter extends OncePerRequestFilter {

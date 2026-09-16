@@ -35,7 +35,8 @@ class TeamServiceTest {
     when(teamRepository.existsByNameIgnoreCase("Platform")).thenReturn(false);
     when(teamRepository.save(any(Team.class))).thenAnswer(inv -> inv.getArgument(0));
 
-    var response = new TeamService(teamRepository).create(new TeamCreateRequest("Platform", "desc"));
+    var response =
+        new TeamService(teamRepository).create(new TeamCreateRequest("Platform", "desc"));
 
     assertThat(response.name()).isEqualTo("Platform");
   }
