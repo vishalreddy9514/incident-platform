@@ -1,14 +1,27 @@
 # Deployment
 
-> **Status:** Terraform (Phase 12) is written and validated but not yet applied — no AWS
-> account is wired into this repository. Phase 13 (cloud deployment) covers actually running
-> `terraform apply` against a real account, wiring `deploy.yml`'s image push over from GHCR to
-> the ECR repositories this phase's Terraform creates, and the first end-to-end health check of a
-> real deployment.
+> **Status:** All infrastructure code (Phase 12) and deploy-auth prep (Phase 13's OIDC role,
+> ADR-0014) is written and `terraform validate`-clean. A live `terraform apply` against a real
+> AWS account has **deliberately not been run** — every resource below bills by the hour
+> (roughly **$50-100/month** if left running: NAT gateway, RDS, ElastiCache, ALB, and the Fargate
+> tasks all have an ongoing cost, unlike everything in Phases 1-12, which is free source code).
+> For a portfolio project, spending real money to keep a demo environment up indefinitely isn't
+> justified, so this deliberately stops at "provable and one command away" rather than "left
+> running 24/7". The steps below are exact and tested against real Terraform/AWS API behaviour
+> (see `docs/architecture.md`'s Phase 12 section) — this is the actual runbook, not a stub.
 >
 > Target architecture: [`PHASE-1-requirements-and-architecture.md`](../PHASE-1-requirements-and-architecture.md)
 > §13-§14, and the "Terraform & AWS infrastructure (Phase 12)" section of
 > [`architecture.md`](architecture.md).
+
+## Cost estimate (why this isn't left running)
+
+Approximate `eu-west-2` on-demand pricing for what `environments/dev` provisions, run continuously
+for a month: NAT gateway (~$27 + data processing), RDS `db.t4g.micro` single-AZ (~$12), ElastiCache
+`cache.t4g.micro` (~$10), ALB (~$16 + LCU usage), three Fargate tasks at the sizes in
+`modules/ecs/variables.tf` (~$15-25). A short apply→verify→destroy cycle (an hour or two, per the
+walkthrough below) costs a small fraction of a dollar — the ongoing monthly total is what's being
+avoided, not the act of applying itself.
 
 ## Provisioning infrastructure (once a real AWS account exists)
 
@@ -41,10 +54,16 @@ ECS services will fail to reach steady state on this first apply — the ECR rep
 since no image has ever been pushed to them (`backend_image_tag`/etc. default to `"latest"`, which
 doesn't exist yet). That's expected; step 3 fixes it.
 
+This apply also creates a GitHub Actions OIDC deploy role (ADR-0014, `terraform output
+github_actions_deploy_role_arn`) scoped to push to these ECR repositories — set it as
+`AWS_DEPLOY_ROLE_ARN` in the repository's GitHub Actions variables and wire an
+`aws-actions/configure-aws-credentials` step into `deploy.yml` to have CI push images itself
+instead of the manual step below. Not done automatically here since it only makes sense once a
+real role ARN exists.
+
 ### 3. Push real images and let the services stabilise
 
-Until `deploy.yml` is switched from GHCR to these ECR repositories (Phase 13), push manually the
-first time:
+Until `deploy.yml` is switched from GHCR to these ECR repositories, push manually the first time:
 
 ```bash
 aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <account-id>.dkr.ecr.<region>.amazonaws.com

@@ -5,3 +5,7 @@ referenced in each task definition) plus one task role per service (`backend`, `
 `frontend`). Task roles currently hold no permissions beyond assuming the role — none of the
 three services call another AWS API at runtime yet — but stay separate per service so a future
 service-specific need doesn't touch the others' identities.
+
+Also provisions the GitHub Actions OIDC provider + deploy role (`github_oidc.tf`) that
+`deploy.yml` will assume to push to ECR once ADR-0012's GHCR→ECR cutover happens — see ADR-0014.
+
