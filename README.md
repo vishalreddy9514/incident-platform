@@ -2,7 +2,7 @@
 
 An enterprise-style internal engineering service desk: users raise incidents, engineers triage and resolve them, admins manage the platform — with an optional AI-assisted analysis service (classification, summarisation, keyword extraction, suggested troubleshooting steps) sitting alongside the core workflow, not at the centre of it.
 
-> **Status: Phase 11 of 16 — CI/CD with GitHub Actions.**
+> **Status: Phase 12 of 16 — Terraform & AWS infrastructure.**
 > Core auth/RBAC, incident management, dashboards, the frontend, and the AI service (wired end-to-end into the backend) are built and runnable; the whole stack now also runs with a single `docker compose up --build`. See [`docs/decisions/`](docs/decisions) for the reasoning behind key choices and the phase-by-phase build log in commit history.
 
 ## Why this project exists
@@ -91,6 +91,7 @@ Non-obvious design choices are recorded as Architecture Decision Records in [`do
 - [ADR-0010](docs/decisions/0010-frontend-token-storage.md) — Refresh token in localStorage, access token in memory only
 - [ADR-0011](docs/decisions/0011-pluggable-analysis-provider.md) — Runtime-selectable analysis provider (mock default, real LLM optional)
 - [ADR-0012](docs/decisions/0012-ghcr-before-ecr.md) — Push images to GHCR now, migrate to ECR once Terraform/AWS exist
+- [ADR-0013](docs/decisions/0013-http-only-alb-until-domain-exists.md) — HTTP-only ALB now, TLS deferred until a real domain exists
 
 ## Running the backend locally
 
@@ -195,15 +196,25 @@ Two GitHub Actions workflows (ADR-0005):
 - **`.github/workflows/pr.yml`** — every pull request against `main`: lint/format for all three
   services, the full backend test suite (Testcontainers-backed integration tests included — GitHub's
   runners have real Docker/registry access), ai-service and frontend tests with coverage, dependency
-  vulnerability scans (non-blocking), and a build-only check of all three Dockerfiles. Never has
-  deploy credentials.
+  vulnerability scans (non-blocking), a build-only check of all three Dockerfiles, and (as of Phase
+  12) `terraform fmt -check`/`validate` against every module and root config. Never has deploy
+  credentials.
 - **`.github/workflows/deploy.yml`** — on merge to `main`: re-runs `pr.yml` in full (don't trust PR
   artifacts blindly), then builds, Trivy-scans (blocking on HIGH/CRITICAL), and pushes all three
-  images to GHCR. Terraform/ECS/smoke-test steps are deferred to Phases 12-13 rather than faked —
-  see [ADR-0012](docs/decisions/0012-ghcr-before-ecr.md).
+  images to GHCR. Actually applying the Terraform infrastructure and switching this workflow's
+  push target from GHCR to the ECR repositories that infrastructure creates is Phase 13 — see
+  [ADR-0012](docs/decisions/0012-ghcr-before-ecr.md).
 
 Known, documented gaps (not silently skipped): SonarCloud static analysis (needs an external
 project + token) and Playwright E2E (no test files exist yet — see `tests/e2e/README.md`).
+
+## Infrastructure
+
+`infrastructure/terraform/` (structure in [`architecture.md`](docs/architecture.md)) provisions a
+VPC, ECS Fargate cluster/services, RDS Postgres, ElastiCache Redis, an ALB, ECR repositories, IAM
+roles, and Secrets Manager entries — written and `terraform validate`-clean, but not yet applied
+(no AWS account is wired into this repository until Phase 13). See
+[`docs/deployment.md`](docs/deployment.md) for the provisioning walkthrough once one exists.
 
 ## Roadmap
 
@@ -219,7 +230,8 @@ project + token) and Playwright E2E (no test files exist yet — see `tests/e2e/
    and frontend auth/routing covered, most frontend pages still untested
 10. ✅ Dockerisation
 11. ✅ CI/CD with GitHub Actions
-12. ⬜ Terraform & AWS infrastructure
+12. ✅ Terraform & AWS infrastructure — written and validated (`terraform fmt`/`validate` clean);
+    not yet applied, no AWS account wired in yet (Phase 13)
 13. ⬜ Cloud deployment
 14. ⬜ Observability & monitoring
 15. ⬜ Security hardening
