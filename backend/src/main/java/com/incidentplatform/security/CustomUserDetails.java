@@ -8,10 +8,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
- * Wraps our {@link User} entity to satisfy Spring Security's {@link UserDetails} contract.
- * Exposes a single authority, {@code ROLE_<role>}, matching {@code Role} exactly — Spring
- * Security's {@code hasRole("ADMIN")} checks strip the "ROLE_" prefix automatically, so this
- * lines up with {@code @PreAuthorize("hasRole('ADMIN')")} usage elsewhere without extra mapping.
+ * Wraps our {@link User} entity to satisfy Spring Security's {@link UserDetails} contract. Exposes
+ * a single authority, {@code ROLE_<role>}, matching {@code Role} exactly — Spring Security's {@code
+ * hasRole("ADMIN")} checks strip the "ROLE_" prefix automatically, so this lines up with
+ * {@code @PreAuthorize("hasRole('ADMIN')")} usage elsewhere without extra mapping.
  */
 public class CustomUserDetails implements UserDetails {
 

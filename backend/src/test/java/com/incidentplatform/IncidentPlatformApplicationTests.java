@@ -22,14 +22,13 @@ import org.testcontainers.utility.DockerImageName;
 
 /**
  * The broadest possible check: boots the entire Spring context (all entities, repositories,
- * security config, exception handling) against real Postgres and Redis, on a real HTTP port. If
- * any bean is misconfigured or any entity doesn't match the migrated schema, this test fails to
- * start.
+ * security config, exception handling) against real Postgres and Redis, on a real HTTP port. If any
+ * bean is misconfigured or any entity doesn't match the migrated schema, this test fails to start.
  *
- * <p>Updated in Phase 5: {@code /api/v1/categories} now requires authentication (it no longer
- * sits in the temporary Phase 4 permit-all), so this test registers a real user and uses the
- * issued token — exercising the same JWT path a real client would, rather than special-casing
- * the test around the security change. See {@code AuthenticationIntegrationTest} for the fuller
+ * <p>Updated in Phase 5: {@code /api/v1/categories} now requires authentication (it no longer sits
+ * in the temporary Phase 4 permit-all), so this test registers a real user and uses the issued
+ * token — exercising the same JWT path a real client would, rather than special-casing the test
+ * around the security change. See {@code AuthenticationIntegrationTest} for the fuller
  * authentication/RBAC test suite.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -90,7 +89,8 @@ class IncidentPlatformApplicationTests {
 
   @Test
   void actuatorHealthEndpointReportsUp() {
-    ResponseEntity<String> response = restTemplate.getForEntity(url("/actuator/health"), String.class);
+    ResponseEntity<String> response =
+        restTemplate.getForEntity(url("/actuator/health"), String.class);
 
     assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
     assertThat(response.getBody()).contains("UP");

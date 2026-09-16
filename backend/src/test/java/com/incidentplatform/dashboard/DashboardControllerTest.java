@@ -27,8 +27,8 @@ import org.springframework.test.web.servlet.MockMvc;
 /**
  * MVC slice test — security filters disabled, same rationale as {@code CategoryControllerTest}.
  * {@code getMetrics} needs an {@code @AuthenticationPrincipal CustomUserDetails}, so the
- * Authentication is set directly on {@link SecurityContextHolder} rather than relying on a
- * request post-processor — see {@code UserControllerTest} for why.
+ * Authentication is set directly on {@link SecurityContextHolder} rather than relying on a request
+ * post-processor — see {@code UserControllerTest} for why.
  */
 @WebMvcTest(DashboardController.class)
 @AutoConfigureMockMvc(addFilters = false)

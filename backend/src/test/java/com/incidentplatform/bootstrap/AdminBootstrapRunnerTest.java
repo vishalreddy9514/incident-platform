@@ -33,8 +33,7 @@ class AdminBootstrapRunnerTest {
 
   @Test
   void doesNothingWhenPasswordIsBlank() {
-    var runner =
-        new AdminBootstrapRunner(userRepository, passwordEncoder, "admin@example.com", "");
+    var runner = new AdminBootstrapRunner(userRepository, passwordEncoder, "admin@example.com", "");
 
     runner.run(null);
 
@@ -45,8 +44,7 @@ class AdminBootstrapRunnerTest {
   void doesNothingWhenAnAdminAlreadyExists() {
     when(userRepository.countByRole(Role.ADMIN)).thenReturn(1L);
     var runner =
-        new AdminBootstrapRunner(
-            userRepository, passwordEncoder, "admin@example.com", "change-me");
+        new AdminBootstrapRunner(userRepository, passwordEncoder, "admin@example.com", "change-me");
 
     runner.run(null);
 
@@ -58,8 +56,7 @@ class AdminBootstrapRunnerTest {
     when(userRepository.countByRole(Role.ADMIN)).thenReturn(0L);
     when(userRepository.existsByEmail("admin@example.com")).thenReturn(true);
     var runner =
-        new AdminBootstrapRunner(
-            userRepository, passwordEncoder, "admin@example.com", "change-me");
+        new AdminBootstrapRunner(userRepository, passwordEncoder, "admin@example.com", "change-me");
 
     runner.run(null);
 
@@ -72,8 +69,7 @@ class AdminBootstrapRunnerTest {
     when(userRepository.existsByEmail("admin@example.com")).thenReturn(false);
     when(passwordEncoder.encode("change-me")).thenReturn("hashed-password");
     var runner =
-        new AdminBootstrapRunner(
-            userRepository, passwordEncoder, "admin@example.com", "change-me");
+        new AdminBootstrapRunner(userRepository, passwordEncoder, "admin@example.com", "change-me");
 
     runner.run(null);
 

@@ -17,8 +17,8 @@ import org.hibernate.type.SqlTypes;
 
 /**
  * Maps to the {@code audit_logs} table (migration V9). Append-only in the same sense as {@link
- * com.incidentplatform.domain.incident.IncidentHistory} — no setters, enforced at the database by
- * a trigger.
+ * com.incidentplatform.domain.incident.IncidentHistory} — no setters, enforced at the database by a
+ * trigger.
  *
  * <p>{@code metadata} is stored as raw JSON text and mapped to the {@code jsonb} column using
  * Hibernate 6's native {@code @JdbcTypeCode(SqlTypes.JSON)} support — no extra mapping library
@@ -58,8 +58,7 @@ public class AuditLog {
     // required by JPA
   }
 
-  public AuditLog(
-      User actor, String action, String entityType, Long entityId, String metadata) {
+  public AuditLog(User actor, String action, String entityType, Long entityId, String metadata) {
     this.actor = actor;
     this.action = action;
     this.entityType = entityType;

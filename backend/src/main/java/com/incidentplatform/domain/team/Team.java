@@ -72,10 +72,10 @@ public class Team {
   }
 
   /**
-   * The value Hibernate last set. The database trigger from migration V1 is the ultimate source
-   * of truth on UPDATE — it overwrites this column with the real commit time regardless of what
-   * the ORM sends, so a freshly-fetched entity is always accurate even if this in-memory instance
-   * is stale after a save.
+   * The value Hibernate last set. The database trigger from migration V1 is the ultimate source of
+   * truth on UPDATE — it overwrites this column with the real commit time regardless of what the
+   * ORM sends, so a freshly-fetched entity is always accurate even if this in-memory instance is
+   * stale after a save.
    */
   public OffsetDateTime getUpdatedAt() {
     return updatedAt;

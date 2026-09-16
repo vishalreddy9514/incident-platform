@@ -10,8 +10,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Read access open to any authenticated user (needed to pick a team when assigning/creating
- * incidents); create is ADMIN-only (FR-19 "manage teams"), gated at the controller. */
+/**
+ * Read access open to any authenticated user (needed to pick a team when assigning/creating
+ * incidents); create is ADMIN-only (FR-19 "manage teams"), gated at the controller.
+ */
 @Service
 public class TeamService {
 

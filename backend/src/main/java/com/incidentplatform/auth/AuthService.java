@@ -21,9 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Deliberately does not use Spring Security's {@code AuthenticationManager}/{@code
  * AuthenticationProvider} machinery — login here is a direct repository lookup plus {@link
- * PasswordEncoder#matches}. See ADR-0008 for why: that machinery exists to support pluggable,
- * often stateful authentication sources, which this stateless single-source (one users table)
- * JWT API doesn't need. {@link com.incidentplatform.security.JwtAuthenticationFilter} handles
+ * PasswordEncoder#matches}. See ADR-0008 for why: that machinery exists to support pluggable, often
+ * stateful authentication sources, which this stateless single-source (one users table) JWT API
+ * doesn't need. {@link com.incidentplatform.security.JwtAuthenticationFilter} handles
  * authenticating subsequent requests from the issued token.
  */
 @Service
@@ -80,7 +80,9 @@ public class AuthService {
             .orElseThrow(
                 () ->
                     new ApiException(
-                        HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Invalid email or password"));
+                        HttpStatus.UNAUTHORIZED,
+                        "INVALID_CREDENTIALS",
+                        "Invalid email or password"));
 
     if (!user.isActive()) {
       throw new ApiException(
@@ -122,7 +124,8 @@ public class AuthService {
   }
 
   private AuthResponse buildAuthResponse(User user) {
-    String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), user.getRole());
+    String accessToken =
+        jwtService.generateAccessToken(user.getId(), user.getEmail(), user.getRole());
     String refreshToken = refreshTokenService.issue(user.getId());
     return new AuthResponse(
         accessToken,

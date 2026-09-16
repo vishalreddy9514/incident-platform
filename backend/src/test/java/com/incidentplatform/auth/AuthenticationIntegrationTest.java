@@ -30,11 +30,11 @@ import org.testcontainers.utility.DockerImageName;
  * issuance → protected endpoint access → role-based access control → refresh rotation) actually
  * works, not just that each piece compiles.
  *
- * <p>The auth rate limit is raised via {@code app.rate-limit.auth.max-requests} for this test
- * class only, since a single test class legitimately makes more than 5 login/register calls from
- * the same "client" (the test's HTTP client shares one source IP) in well under the rate limit
- * window — that's a test-environment artefact, not something the real rate limit should be
- * loosened for in production.
+ * <p>The auth rate limit is raised via {@code app.rate-limit.auth.max-requests} for this test class
+ * only, since a single test class legitimately makes more than 5 login/register calls from the same
+ * "client" (the test's HTTP client shares one source IP) in well under the rate limit window —
+ * that's a test-environment artefact, not something the real rate limit should be loosened for in
+ * production.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -74,7 +74,8 @@ class AuthenticationIntegrationTest {
     RegisterRequest registerRequest =
         new RegisterRequest("integration-user@example.com", "password123", "Integration User");
     ResponseEntity<AuthResponse> registerResponse =
-        restTemplate.postForEntity(url("/api/v1/auth/register"), registerRequest, AuthResponse.class);
+        restTemplate.postForEntity(
+            url("/api/v1/auth/register"), registerRequest, AuthResponse.class);
 
     assertThat(registerResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     assertThat(registerResponse.getBody()).isNotNull();

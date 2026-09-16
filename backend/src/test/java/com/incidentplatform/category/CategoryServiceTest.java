@@ -21,8 +21,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * Pure unit test: the repository is mocked, no Spring context or database is involved. This is
- * the fast, isolated layer of the testing pyramid described in Phase 1 §11.
+ * Pure unit test: the repository is mocked, no Spring context or database is involved. This is the
+ * fast, isolated layer of the testing pyramid described in Phase 1 §11.
  */
 @ExtendWith(MockitoExtension.class)
 class CategoryServiceTest {

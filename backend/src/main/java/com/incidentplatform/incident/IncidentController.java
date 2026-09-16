@@ -84,8 +84,10 @@ public class IncidentController {
     return incidentService.update(id, request, principal);
   }
 
-  /** ADMIN-only — no FR explicitly assigns incident deletion to a role; treated as a sensitive
-   * administrative action consistent with how deletions are flagged elsewhere (Phase 1 §10). */
+  /**
+   * ADMIN-only — no FR explicitly assigns incident deletion to a role; treated as a sensitive
+   * administrative action consistent with how deletions are flagged elsewhere (Phase 1 §10).
+   */
   @DeleteMapping("/{id}")
   @PreAuthorize("hasRole('ADMIN')")
   @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -124,8 +126,10 @@ public class IncidentController {
     return incidentService.assign(id, request, principal);
   }
 
-  /** ENGINEER/ADMIN only (FR-7 covers status changes generally; escalation specifically per UC-4
-   * is an engineer/admin action, not something a reporting USER triggers directly). */
+  /**
+   * ENGINEER/ADMIN only (FR-7 covers status changes generally; escalation specifically per UC-4 is
+   * an engineer/admin action, not something a reporting USER triggers directly).
+   */
   @PostMapping("/{id}/escalate")
   @PreAuthorize("hasAnyRole('ENGINEER','ADMIN')")
   public IncidentDetailResponse escalate(
@@ -135,8 +139,10 @@ public class IncidentController {
     return incidentService.escalate(id, request, principal);
   }
 
-  /** Any user who can view the incident may request analysis (UC-5); ownership/role rules are
-   * the same "can view this incident" check every other nested read/write here applies. */
+  /**
+   * Any user who can view the incident may request analysis (UC-5); ownership/role rules are the
+   * same "can view this incident" check every other nested read/write here applies.
+   */
   @PostMapping("/{id}/ai-analysis")
   public AiAnalysisResponse requestAiAnalysis(
       @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails principal) {

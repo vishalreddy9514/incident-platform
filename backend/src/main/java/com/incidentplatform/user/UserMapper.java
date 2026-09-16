@@ -11,7 +11,11 @@ public final class UserMapper {
   public static UserResponse toResponse(User user) {
     Long teamId = user.getTeam() != null ? user.getTeam().getId() : null;
     return new UserResponse(
-        user.getId(), user.getEmail(), user.getDisplayName(), user.getRole(), teamId,
+        user.getId(),
+        user.getEmail(),
+        user.getDisplayName(),
+        user.getRole(),
+        teamId,
         user.isActive());
   }
 }

@@ -19,10 +19,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * Maps to the {@code incidents} table (migration V5) — the central entity. Deliberately
- * unidirectional (no {@code @OneToMany} back-references to comments/history/assignments): those
- * are queried explicitly through their own repositories, keeping this entity simple and avoiding
- * accidental N+1 loading. See Phase 1 §8.2 and ADR-0002 for why assignment history and the
- * general timeline are separate concepts, not folded into this entity.
+ * unidirectional (no {@code @OneToMany} back-references to comments/history/assignments): those are
+ * queried explicitly through their own repositories, keeping this entity simple and avoiding
+ * accidental N+1 loading. See Phase 1 §8.2 and ADR-0002 for why assignment history and the general
+ * timeline are separate concepts, not folded into this entity.
  */
 @Entity
 @Table(name = "incidents")

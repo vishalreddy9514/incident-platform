@@ -11,10 +11,9 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 
 /**
- * Role-scoped dashboard metrics (FR-16/17/18), computed via a database {@code GROUP BY} (see
- * {@link IncidentRepository#countByStatus} / {@code countByStatusForAssignee}), per Phase 1 §6.3
- * UC-7's explicit requirement: aggregate queries, not client-side computation over the full
- * dataset.
+ * Role-scoped dashboard metrics (FR-16/17/18), computed via a database {@code GROUP BY} (see {@link
+ * IncidentRepository#countByStatus} / {@code countByStatusForAssignee}), per Phase 1 §6.3 UC-7's
+ * explicit requirement: aggregate queries, not client-side computation over the full dataset.
  */
 @Service
 public class DashboardService {

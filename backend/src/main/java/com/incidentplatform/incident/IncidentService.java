@@ -42,10 +42,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Core incident workflow (FR-5 to FR-12). Role gates (who can call which action at all) are
- * applied at the controller via {@code @PreAuthorize} where the rule is a pure role check;
- * ownership and business-state rules (who can view/edit *this specific* incident, and when) live
- * here, per ADR-0002 — the two kinds of rule don't fit the same enforcement point.
+ * Core incident workflow (FR-5 to FR-12). Role gates (who can call which action at all) are applied
+ * at the controller via {@code @PreAuthorize} where the rule is a pure role check; ownership and
+ * business-state rules (who can view/edit *this specific* incident, and when) live here, per
+ * ADR-0002 — the two kinds of rule don't fit the same enforcement point.
  */
 @Service
 public class IncidentService {
@@ -61,10 +61,8 @@ public class IncidentService {
               Set.of(IncidentStatus.IN_PROGRESS, IncidentStatus.ESCALATED, IncidentStatus.CLOSED),
           IncidentStatus.IN_PROGRESS,
               Set.of(IncidentStatus.ESCALATED, IncidentStatus.RESOLVED, IncidentStatus.OPEN),
-          IncidentStatus.ESCALATED,
-              Set.of(IncidentStatus.IN_PROGRESS, IncidentStatus.RESOLVED),
-          IncidentStatus.RESOLVED,
-              Set.of(IncidentStatus.CLOSED, IncidentStatus.IN_PROGRESS),
+          IncidentStatus.ESCALATED, Set.of(IncidentStatus.IN_PROGRESS, IncidentStatus.RESOLVED),
+          IncidentStatus.RESOLVED, Set.of(IncidentStatus.CLOSED, IncidentStatus.IN_PROGRESS),
           IncidentStatus.CLOSED, Set.of());
 
   private final IncidentRepository incidentRepository;
@@ -173,30 +171,35 @@ public class IncidentService {
     if (request.description() != null
         && !request.description().isBlank()
         && !request.description().equals(incident.getDescription())) {
-      recordHistory(incident, actor, "description", incident.getDescription(), request.description());
+      recordHistory(
+          incident, actor, "description", incident.getDescription(), request.description());
       incident.setDescription(request.description());
     }
 
     if (request.categoryId() != null
         && !request.categoryId().equals(incident.getCategory().getId())) {
       IncidentCategory category = requireCategory(request.categoryId());
-      recordHistory(incident, actor, "category", incident.getCategory().getName(), category.getName());
+      recordHistory(
+          incident, actor, "category", incident.getCategory().getName(), category.getName());
       incident.setCategory(category);
     }
 
     if (request.priority() != null && request.priority() != incident.getPriority()) {
-      recordHistory(incident, actor, "priority", incident.getPriority().name(), request.priority().name());
+      recordHistory(
+          incident, actor, "priority", incident.getPriority().name(), request.priority().name());
       incident.setPriority(request.priority());
     }
 
     if (request.severity() != null && request.severity() != incident.getSeverity()) {
-      recordHistory(incident, actor, "severity", incident.getSeverity().name(), request.severity().name());
+      recordHistory(
+          incident, actor, "severity", incident.getSeverity().name(), request.severity().name());
       incident.setSeverity(request.severity());
     }
 
     if (request.status() != null && request.status() != incident.getStatus()) {
       validateTransition(incident.getStatus(), request.status());
-      recordHistory(incident, actor, "status", incident.getStatus().name(), request.status().name());
+      recordHistory(
+          incident, actor, "status", incident.getStatus().name(), request.status().name());
       incident.setStatus(request.status());
     }
 
@@ -217,7 +220,8 @@ public class IncidentService {
     Incident incident = requireIncident(id);
     assertCanView(incident, principal);
     User author = requireUser(principal.getUserId());
-    IncidentComment comment = commentRepository.save(new IncidentComment(incident, author, request.body()));
+    IncidentComment comment =
+        commentRepository.save(new IncidentComment(incident, author, request.body()));
     return IncidentMapper.toCommentResponse(comment);
   }
 
@@ -240,7 +244,8 @@ public class IncidentService {
   }
 
   @Transactional
-  public IncidentDetailResponse assign(Long id, AssignRequest request, CustomUserDetails principal) {
+  public IncidentDetailResponse assign(
+      Long id, AssignRequest request, CustomUserDetails principal) {
     Incident incident = requireIncident(id);
     User assignee = requireUser(request.assignedToUserId());
     if (assignee.getRole() == Role.USER) {
@@ -267,7 +272,12 @@ public class IncidentService {
     // it only fires from OPEN (an already in-progress/escalated incident being reassigned keeps
     // its current status).
     if (incident.getStatus() == IncidentStatus.OPEN) {
-      recordHistory(incident, actor, "status", incident.getStatus().name(), IncidentStatus.IN_PROGRESS.name());
+      recordHistory(
+          incident,
+          actor,
+          "status",
+          incident.getStatus().name(),
+          IncidentStatus.IN_PROGRESS.name());
       incident.setStatus(IncidentStatus.IN_PROGRESS);
     }
 
@@ -275,7 +285,8 @@ public class IncidentService {
   }
 
   @Transactional
-  public IncidentDetailResponse escalate(Long id, EscalateRequest request, CustomUserDetails principal) {
+  public IncidentDetailResponse escalate(
+      Long id, EscalateRequest request, CustomUserDetails principal) {
     Incident incident = requireIncident(id);
     validateTransition(incident.getStatus(), IncidentStatus.ESCALATED);
     User actor = requireUser(principal.getUserId());
@@ -306,16 +317,21 @@ public class IncidentService {
     }
   }
 
-  private void recordHistory(Incident incident, User actor, String field, String oldValue, String newValue) {
+  private void recordHistory(
+      Incident incident, User actor, String field, String oldValue, String newValue) {
     historyRepository.save(new IncidentHistory(incident, actor, field, oldValue, newValue));
   }
 
   private Incident requireIncident(Long id) {
-    return incidentRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Incident", id));
+    return incidentRepository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Incident", id));
   }
 
   private IncidentCategory requireCategory(Long id) {
-    return categoryRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("IncidentCategory", id));
+    return categoryRepository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("IncidentCategory", id));
   }
 
   private User requireUser(Long id) {

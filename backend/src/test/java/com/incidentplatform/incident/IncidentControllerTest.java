@@ -30,8 +30,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 /**
  * MVC slice test for request validation and response shape — security filters disabled, same
- * rationale as {@code CategoryControllerTest}/{@code AuthControllerTest}: RBAC and ownership
- * rules are covered end-to-end in {@code IncidentManagementIntegrationTest}.
+ * rationale as {@code CategoryControllerTest}/{@code AuthControllerTest}: RBAC and ownership rules
+ * are covered end-to-end in {@code IncidentManagementIntegrationTest}.
  */
 @WebMvcTest(IncidentController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -72,7 +72,8 @@ class IncidentControllerTest {
             null);
     when(incidentService.create(any(), any())).thenReturn(response);
 
-    CreateIncidentRequest request = new CreateIncidentRequest("Laptop won't boot", "Black screen", 1L);
+    CreateIncidentRequest request =
+        new CreateIncidentRequest("Laptop won't boot", "Black screen", 1L);
 
     mockMvc
         .perform(

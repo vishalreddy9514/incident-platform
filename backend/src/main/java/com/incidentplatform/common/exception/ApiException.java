@@ -5,8 +5,8 @@ import org.springframework.http.HttpStatus;
 /**
  * Base type for exceptions that should be translated into the standard error envelope by {@link
  * GlobalExceptionHandler}, rather than surfacing as an unhandled 500. Feature-specific exceptions
- * (added from Phase 5 onward) extend this rather than each writing their own {@code
- * @ExceptionHandler}.
+ * (added from Phase 5 onward) extend this rather than each writing their own
+ * {@code @ExceptionHandler}.
  */
 public class ApiException extends RuntimeException {
 

@@ -15,13 +15,12 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * Runs against a real PostgreSQL 16 container, not H2 — {@code
- * @AutoConfigureTestDatabase(replace = NONE)} disables Spring Boot's default swap-in-an-embedded-
- * database behaviour. Flyway runs automatically against the container on context startup (it's
- * on the classpath and enabled by default), and Hibernate's {@code ddl-auto=validate} then checks
- * every entity in this module against the real migrated schema — so this test doubles as
- * end-to-end validation that the Phase 4 entities actually match the Phase 3 migrations, not just
- * that the repository method compiles.
+ * Runs against a real PostgreSQL 16 container, not H2 — {@code @AutoConfigureTestDatabase(replace =
+ * NONE)} disables Spring Boot's default swap-in-an-embedded- database behaviour. Flyway runs
+ * automatically against the container on context startup (it's on the classpath and enabled by
+ * default), and Hibernate's {@code ddl-auto=validate} then checks every entity in this module
+ * against the real migrated schema — so this test doubles as end-to-end validation that the Phase 4
+ * entities actually match the Phase 3 migrations, not just that the repository method compiles.
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
