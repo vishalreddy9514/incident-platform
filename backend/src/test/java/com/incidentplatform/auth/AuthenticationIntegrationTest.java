@@ -10,12 +10,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.GenericContainer;
@@ -63,7 +65,15 @@ class AuthenticationIntegrationTest {
 
   @LocalServerPort private int port;
 
-  private final TestRestTemplate restTemplate = new TestRestTemplate();
+  // TestRestTemplate's default request factory wraps java.net.HttpURLConnection, which both
+  // rejects PATCH outright ("Invalid HTTP method: PATCH") and mishandles retrying a POST body
+  // after a 401 response ("cannot retry due to server authentication, in streaming mode") -
+  // real bugs, only surfaced now that this test runs somewhere with Testcontainers/Docker
+  // access at all. JdkClientHttpRequestFactory wraps java.net.http.HttpClient instead, which has
+  // neither problem, and needs no extra dependency (JDK 11+ and spring-web, both already here).
+  private final TestRestTemplate restTemplate =
+      new TestRestTemplate(
+          new RestTemplateBuilder().requestFactory(() -> new JdkClientHttpRequestFactory()));
 
   private String url(String path) {
     return "http://localhost:" + port + path;
