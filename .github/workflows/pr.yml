@@ -155,6 +155,39 @@ jobs:
           push: false
           tags: incident-platform-${{ matrix.service }}:pr-check
 
+  terraform:
+    name: Terraform (fmt, validate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+
+      - name: Format check
+        run: terraform fmt -check -recursive infrastructure/terraform
+
+      # No real AWS account/credentials exist yet (Phase 13), so this can
+      # only go as far as `validate` - real API calls (a `plan`, which
+      # would also require exactly one of a pre-existing S3 state bucket or
+      # a throwaway one) are out of scope here. `-backend=false` skips the
+      # backend entirely, which is all `validate` needs; module resolution
+      # covers every modules/* directory transitively through these two
+      # root configurations.
+      - name: Validate bootstrap config
+        working-directory: infrastructure/terraform/bootstrap
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Validate dev environment config
+        working-directory: infrastructure/terraform/environments/dev
+        run: |
+          terraform init -backend=false
+          terraform validate
+
   # Everything else known to be part of the originally-planned pipeline
   # (Phase 1 §12) but not yet real:
   # - Static analysis (SonarQube/SonarCloud) - needs an external SonarCloud

@@ -1,3 +1,4 @@
-Root Terraform configuration for the "dev" environment - wires the modules
-above together. Built in Phase 12, alongside remote state (S3 backend +
-DynamoDB lock table) bootstrap configuration.
+Root Terraform configuration for the "dev" environment — wires every module in `../../modules`
+together. See `docs/deployment.md` for the actual `terraform init`/`apply` walkthrough (bootstrap
+first, then this), and `backend.hcl.example`/`terraform.tfvars.example` for what needs filling in
+before it will run against a real AWS account.
