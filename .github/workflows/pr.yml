@@ -48,12 +48,14 @@ jobs:
 
       - name: Dependency vulnerability scan (OWASP)
         working-directory: backend
-        # Non-blocking: without an NVD_API_KEY secret (not configured yet -
-        # see docs/security.md), the NVD feed is heavily rate-limited and
-        # this can be slow or fail outright for reasons unrelated to real
-        # vulnerabilities. Real findings are still visible in the step's
-        # own log even though they don't fail the job.
+        # Non-blocking and time-boxed: without an NVD_API_KEY secret (not
+        # configured yet - see docs/security.md), the NVD feed is heavily
+        # rate-limited - confirmed in practice taking 10+ minutes just to
+        # download the CVE feed on a cold cache. continue-on-error means a
+        # real finding or a timeout alike never blocks the job; real
+        # findings are still visible in the step's own log either way.
         continue-on-error: true
+        timeout-minutes: 8
         run: mvn -B org.owasp:dependency-check-maven:12.1.1:check -DfailBuildOnCVSS=8
 
   ai-service:
