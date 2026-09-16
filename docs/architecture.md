@@ -474,3 +474,55 @@ frontend/Dockerfile     node:20-alpine (npm ci && vite build) ->
   wasn't retried or routed around. Recommend running `docker compose up
   --build` in an environment with real registry access as the first
   verification step before relying on these images.
+
+## CI/CD (Phase 11)
+
+Two workflows, per ADR-0005's two-pipeline split:
+
+```
+.github/workflows/pr.yml       pull_request -> main, and reusable
+                                (workflow_call) so deploy.yml can call it
+.github/workflows/deploy.yml   push -> main; calls pr.yml, then builds,
+                                scans, and pushes images
+```
+
+- **`pr.yml`** runs three per-service jobs (backend/ai-service/frontend —
+  lint, type/format checks, tests with coverage, non-blocking dependency
+  scans) plus a matrix job that build-checks all three Dockerfiles.
+  `permissions: contents: read` only — it structurally cannot reach any
+  deploy credential, matching ADR-0005's stated security property, not
+  just a convention.
+- **The backend job runs the full test suite, Testcontainers included.**
+  Locally (this repo's own dev sandbox), 5 of 99 backend tests can't run
+  at all without a Docker daemon with registry access — GitHub's own
+  runners have both, so this is the first time those 5 tests, and the
+  RBAC-denial tests added in Phase 9's `AuthenticationIntegrationTest`,
+  actually execute anywhere.
+- **`deploy.yml` reuses `pr.yml` via `workflow_call`** rather than
+  duplicating its steps (ADR-0005 flagged some duplication between the
+  two workflows as an accepted cost; calling one from the other removes
+  most of it). Only after that passes does it build, Trivy-scan
+  (`severity: HIGH,CRITICAL`, `exit-code: "1"` — a real finding fails the
+  job), and push to GHCR using the workflow's own `GITHUB_TOKEN` — no
+  external registry account or secret to configure. See ADR-0012 for why
+  GHCR now rather than the originally-planned ECR (Terraform/AWS don't
+  exist until Phases 12-13).
+- **Formatting debt paid down first, not hidden**: `mvn spotless:check`
+  already failed on ~40 pre-existing backend files before this phase
+  (found and deliberately left alone during Phase 8/10, since fixing
+  unrelated formatting wasn't in scope for those changes). Turning the
+  CI gate on for real made that debt in scope — `mvn spotless:apply`
+  across the backend landed as its own prep commit, verified
+  formatting-only via a full test re-run, before the workflow that
+  depends on the gate passing.
+- **Verified**: both workflow files pass `actionlint` (job dependencies,
+  expression syntax, action references) with zero findings. The actual
+  GitHub-hosted run is the real verification, though — checked via the
+  pull request these changes went through, not asserted from the YAML
+  alone.
+- **Documented, not hidden, gaps**: SonarCloud static analysis (Phase 1
+  §12 step 8) needs an external SonarCloud project and a `SONAR_TOKEN`
+  secret, neither of which exist; Playwright E2E (step 10) has no actual
+  test files yet, only `tests/e2e/README.md`'s description of what it
+  will eventually cover. Both are called out explicitly in `pr.yml`'s
+  own comments and `docs/testing.md`, not silently skipped.

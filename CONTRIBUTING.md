@@ -63,7 +63,7 @@ Run before committing:
 
 ```bash
 # Backend
-cd backend && ./mvnw spotless:apply
+cd backend && mvn spotless:apply
 
 # AI service
 cd ai-service && ruff check --fix . && black .
