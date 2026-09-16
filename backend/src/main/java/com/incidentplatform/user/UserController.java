@@ -38,8 +38,8 @@ public class UserController {
    * ENGINEER/ADMIN (widened from ADMIN-only in Phase 6/7): an ENGINEER needs this to find who to
    * assign an incident to (FR-8) — there's no other endpoint that lists users. {@code role} lets
    * the assignment picker request only ENGINEER/ADMIN accounts rather than the full directory,
-   * which also happens to be the more useful shape for that UI. A plain USER still cannot call
-   * this at all; the full unfiltered directory remains something only ADMIN realistically uses.
+   * which also happens to be the more useful shape for that UI. A plain USER still cannot call this
+   * at all; the full unfiltered directory remains something only ADMIN realistically uses.
    */
   @GetMapping
   @PreAuthorize("hasAnyRole('ENGINEER','ADMIN')")
@@ -48,8 +48,10 @@ public class UserController {
     return userService.listUsers(role, pageable);
   }
 
-  /** ADMIN-only (FR-19). Self-role-edit is rejected in the service layer, not here — see
-   * UserService.updateRole's Javadoc. */
+  /**
+   * ADMIN-only (FR-19). Self-role-edit is rejected in the service layer, not here — see
+   * UserService.updateRole's Javadoc.
+   */
   @PatchMapping("/{id}/role")
   @PreAuthorize("hasRole('ADMIN')")
   public UserResponse updateRole(

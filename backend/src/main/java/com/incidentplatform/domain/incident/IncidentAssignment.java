@@ -14,10 +14,10 @@ import java.time.OffsetDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 
 /**
- * Maps to the {@code incident_assignments} table (migration V7). Records who has owned an
- * incident and when — separate from {@link IncidentHistory}'s general timeline feed (Phase 1
- * §8.2, ADR-0002). {@code unassignedAt} is set explicitly when the assignment ends (Phase 6),
- * left null while the assignment is current.
+ * Maps to the {@code incident_assignments} table (migration V7). Records who has owned an incident
+ * and when — separate from {@link IncidentHistory}'s general timeline feed (Phase 1 §8.2,
+ * ADR-0002). {@code unassignedAt} is set explicitly when the assignment ends (Phase 6), left null
+ * while the assignment is current.
  */
 @Entity
 @Table(name = "incident_assignments")

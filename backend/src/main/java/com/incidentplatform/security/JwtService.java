@@ -48,9 +48,9 @@ public class JwtService {
   }
 
   /**
-   * Parses and verifies a token, throwing {@link io.jsonwebtoken.JwtException} (or a subclass
-   * such as {@code ExpiredJwtException}) if the signature is invalid or the token has expired.
-   * Callers (see {@link JwtAuthenticationFilter}) are expected to catch this and treat it as "not
+   * Parses and verifies a token, throwing {@link io.jsonwebtoken.JwtException} (or a subclass such
+   * as {@code ExpiredJwtException}) if the signature is invalid or the token has expired. Callers
+   * (see {@link JwtAuthenticationFilter}) are expected to catch this and treat it as "not
    * authenticated" rather than letting it propagate as a 500.
    */
   public Claims parseClaims(String token) {

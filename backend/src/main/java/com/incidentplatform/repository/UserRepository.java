@@ -15,7 +15,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   long countByRole(Role role);
 
-  /** Backs the ENGINEER/ADMIN-visible "who can I assign this to" list (see UserController) —
-   * filtered to a single role rather than paging through every user. */
+  /**
+   * Backs the ENGINEER/ADMIN-visible "who can I assign this to" list (see UserController) —
+   * filtered to a single role rather than paging through every user.
+   */
   Page<User> findByRole(Role role, Pageable pageable);
 }

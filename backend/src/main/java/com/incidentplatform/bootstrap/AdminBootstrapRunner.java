@@ -14,15 +14,15 @@ import org.springframework.stereotype.Component;
 /**
  * Solves a real bootstrapping problem: every ADMIN-only endpoint (role changes, category
  * management, user listing) needs an ADMIN to exist, but registration only ever creates USER
- * accounts (Phase 5) and there's no seeded admin in the migrations — seeding a real user account
- * in a Flyway migration would be demo/fake data masquerading as production schema, which migration
+ * accounts (Phase 5) and there's no seeded admin in the migrations — seeding a real user account in
+ * a Flyway migration would be demo/fake data masquerading as production schema, which migration
  * V11's own comment explicitly avoided for categories.
  *
  * <p>Instead: on startup, if no ADMIN account exists yet and {@code
  * app.admin-bootstrap.email}/{@code .password} are configured (non-blank), create exactly one.
- * Idempotent — checked via a cheap {@code COUNT} query — so it only ever creates the account
- * once, and does nothing at all if the env vars are left unset (the sensible default for an
- * environment where the first admin is created some other way).
+ * Idempotent — checked via a cheap {@code COUNT} query — so it only ever creates the account once,
+ * and does nothing at all if the env vars are left unset (the sensible default for an environment
+ * where the first admin is created some other way).
  */
 @Component
 public class AdminBootstrapRunner implements ApplicationRunner {

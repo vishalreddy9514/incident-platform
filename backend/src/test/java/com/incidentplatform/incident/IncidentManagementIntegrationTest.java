@@ -40,8 +40,8 @@ import org.testcontainers.utility.DockerImageName;
  * <p>There's no admin-promotion endpoint reachable from a fresh account, so this test promotes a
  * registered user to ENGINEER directly via {@link UserRepository} — legitimate for test setup,
  * distinct from {@code AdminBootstrapRunner}'s production bootstrapping mechanism. Tokens issued
- * before a role change still carry the old role (JWT claims are a snapshot at issue time), so
- * each promotion is followed by a fresh login.
+ * before a role change still carry the old role (JWT claims are a snapshot at issue time), so each
+ * promotion is followed by a fresh login.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -98,8 +98,10 @@ class IncidentManagementIntegrationTest {
     return response.getBody().accessToken();
   }
 
-  /** Registers a user, promotes them to ENGINEER directly via the repository, then logs in again
-   * to get a token that actually carries the new role. */
+  /**
+   * Registers a user, promotes them to ENGINEER directly via the repository, then logs in again to
+   * get a token that actually carries the new role.
+   */
   private String registerEngineer(String email) {
     register(email);
     var user = userRepository.findByEmail(email).orElseThrow();
