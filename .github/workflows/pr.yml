@@ -54,9 +54,16 @@ jobs:
         # download the CVE feed on a cold cache. continue-on-error means a
         # real finding or a timeout alike never blocks the job; real
         # findings are still visible in the step's own log either way.
+        #
+        # The step's own `timeout-minutes` is a backstop, not the primary
+        # cutoff: observed in practice (two consecutive real runs) not to
+        # reliably force-terminate a step that's blocked in a slow/hanging
+        # network read within its window - the shell-level `timeout` below
+        # sends the kill signal directly to the Maven process itself
+        # instead of relying on the runner to do it.
         continue-on-error: true
-        timeout-minutes: 8
-        run: mvn -B org.owasp:dependency-check-maven:12.1.1:check -DfailBuildOnCVSS=8
+        timeout-minutes: 10
+        run: timeout 7m mvn -B org.owasp:dependency-check-maven:12.1.1:check -DfailBuildOnCVSS=8
 
   ai-service:
     name: AI service (Python)
