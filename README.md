@@ -2,7 +2,7 @@
 
 An enterprise-style internal engineering service desk: users raise incidents, engineers triage and resolve them, admins manage the platform — with an optional AI-assisted analysis service (classification, summarisation, keyword extraction, suggested troubleshooting steps) sitting alongside the core workflow, not at the centre of it.
 
-> **Status: Phase 12 of 16 — Terraform & AWS infrastructure.**
+> **Status: Phase 13 of 16 — Cloud deployment (infrastructure/deploy-auth ready; live apply deliberately deferred — see below).**
 > Core auth/RBAC, incident management, dashboards, the frontend, and the AI service (wired end-to-end into the backend) are built and runnable; the whole stack now also runs with a single `docker compose up --build`. See [`docs/decisions/`](docs/decisions) for the reasoning behind key choices and the phase-by-phase build log in commit history.
 
 ## Why this project exists
@@ -92,6 +92,7 @@ Non-obvious design choices are recorded as Architecture Decision Records in [`do
 - [ADR-0011](docs/decisions/0011-pluggable-analysis-provider.md) — Runtime-selectable analysis provider (mock default, real LLM optional)
 - [ADR-0012](docs/decisions/0012-ghcr-before-ecr.md) — Push images to GHCR now, migrate to ECR once Terraform/AWS exist
 - [ADR-0013](docs/decisions/0013-http-only-alb-until-domain-exists.md) — HTTP-only ALB now, TLS deferred until a real domain exists
+- [ADR-0014](docs/decisions/0014-github-oidc-for-deploy-auth.md) — GitHub Actions authenticates to AWS via OIDC, not long-lived keys
 
 ## Running the backend locally
 
@@ -212,9 +213,12 @@ project + token) and Playwright E2E (no test files exist yet — see `tests/e2e/
 
 `infrastructure/terraform/` (structure in [`architecture.md`](docs/architecture.md)) provisions a
 VPC, ECS Fargate cluster/services, RDS Postgres, ElastiCache Redis, an ALB, ECR repositories, IAM
-roles, and Secrets Manager entries — written and `terraform validate`-clean, but not yet applied
-(no AWS account is wired into this repository until Phase 13). See
-[`docs/deployment.md`](docs/deployment.md) for the provisioning walkthrough once one exists.
+roles (including a GitHub OIDC deploy role, ADR-0014), and Secrets Manager entries — written and
+`terraform validate`-clean. **Deliberately not applied to a real AWS account**: every resource
+here bills by the hour (roughly $50-100/month if left running), and keeping a demo environment up
+indefinitely isn't a cost a portfolio project should carry. [`docs/deployment.md`](docs/deployment.md)
+is the exact, tested runbook for provisioning it (and tearing it down again) whenever that cost is
+worth paying — one command each way, not a stub.
 
 ## Roadmap
 
@@ -230,9 +234,9 @@ roles, and Secrets Manager entries — written and `terraform validate`-clean, b
    and frontend auth/routing covered, most frontend pages still untested
 10. ✅ Dockerisation
 11. ✅ CI/CD with GitHub Actions
-12. ✅ Terraform & AWS infrastructure — written and validated (`terraform fmt`/`validate` clean);
-    not yet applied, no AWS account wired in yet (Phase 13)
-13. ⬜ Cloud deployment
+12. ✅ Terraform & AWS infrastructure — written and validated (`terraform fmt`/`validate` clean)
+13. 🟡 Cloud deployment — infra + GitHub OIDC deploy auth ready (ADR-0014); a live `terraform apply`
+    is deliberately not run to avoid ongoing AWS cost (see `docs/deployment.md`)
 14. ⬜ Observability & monitoring
 15. ⬜ Security hardening
 16. ⬜ Documentation & final polish

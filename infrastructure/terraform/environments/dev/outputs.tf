@@ -31,3 +31,7 @@ output "redis_endpoint" {
   value     = module.cache.endpoint
   sensitive = true
 }
+
+output "github_actions_deploy_role_arn" {
+  value = module.iam.github_actions_deploy_role_arn
+}
