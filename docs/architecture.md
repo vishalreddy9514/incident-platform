@@ -591,3 +591,22 @@ infrastructure/terraform/
   issue a certificate against) and **ADR-0012** for why images will go to GHCR through Phase 12,
   migrating to the ECR repositories this phase creates once Phase 13 wires up real deploy
   credentials for `deploy.yml`.
+
+## Cloud deployment (Phase 13)
+
+The GitHub Actions OIDC deploy role this phase adds (`modules/iam/github_oidc.tf`, ADR-0014) is
+what `deploy.yml` will eventually assume to push to the ECR repositories Phase 12 created — scoped
+narrowly to `ecr:GetAuthorizationToken` plus push on this project's own repositories, not a broad
+"let CI run `terraform apply`" role. Creating it costs nothing (IAM resources aren't billed), so
+it's written and validated the same way every other Phase 12/13 module is.
+
+**A live `terraform apply` against a real AWS account has deliberately not been run.** Everything
+else in this repository — the application code, every test suite, both CI/CD pipelines, all of
+Phase 12's Terraform — is free to create and free to keep. A real VPC/RDS/ElastiCache/ALB/Fargate
+deployment is not: it bills by the hour for as long as it exists (roughly $50-100/month if left
+running, detailed in `docs/deployment.md`). Deploying it briefly to verify end-to-end and then
+tearing it down would cost a small fraction of a dollar and is exactly what `docs/deployment.md`'s
+runbook is written to support on demand — but leaving it applied indefinitely just to have it
+"done" would be spending real money for no purpose a portfolio project needs. This is a scope
+decision, not a gap: everything that can be proven without spending money (module structure,
+`terraform validate`, provider resolution, IAM trust boundaries) has been.
