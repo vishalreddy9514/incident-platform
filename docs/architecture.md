@@ -610,3 +610,49 @@ runbook is written to support on demand — but leaving it applied indefinitely 
 "done" would be spending real money for no purpose a portfolio project needs. This is a scope
 decision, not a gap: everything that can be proven without spending money (module structure,
 `terraform validate`, provider resolution, IAM trust boundaries) has been.
+
+## Observability & monitoring (Phase 14)
+
+Self-hosted Prometheus + Grafana via `docker-compose.yml` (`observability/`, README there for the
+full structure), not AWS Managed Prometheus/Grafana — exactly the split Phase 1 §13 already
+planned: CloudWatch (Phase 12's Terraform) for base infrastructure metrics/logs, this layer for
+richer application dashboards, at zero AWS cost since it's entirely local containers.
+
+- **Both services now emit structured JSON logs** instead of plain-text console output
+  (`backend/src/main/resources/logback-spring.xml` via `logstash-logback-encoder`;
+  `ai-service/app/logging_config.py`, a small hand-rolled formatter rather than a third-party
+  dependency for a handful of fields). A **found-in-practice gotcha**: uvicorn attaches its own
+  handlers directly to the `uvicorn`/`uvicorn.access`/`uvicorn.error` loggers before the app module
+  is even imported, so reconfiguring only the root logger left uvicorn's own access/startup lines
+  printing in its default plain format — confirmed by actually booting the service and reading its
+  stdout, not assumed. Fixed by clearing those loggers' handlers and letting them propagate to
+  root's JSON handler instead.
+- **Request correlation end-to-end**: `RequestCorrelationFilter` (new `observability` package,
+  first filter in `SecurityConfig`'s chain) puts a request ID in the logging MDC and echoes it as
+  `X-Request-Id` on the response; `AiAnalysisClient` forwards the same ID on the backend's own call
+  to the AI service, and `app/middleware.py` picks it up there — so one incident's AI-analysis
+  request can be traced across both services' JSON logs by grepping a single `requestId` field, not
+  just within the backend.
+- **`/actuator/prometheus` (backend) and `/metrics` (AI service, via
+  `prometheus-fastapi-instrumentator`) are unauthenticated** — added to `SecurityConfig`'s permit-all
+  list alongside `/actuator/health`. Verified locally (both services actually booted, endpoints
+  actually curled) rather than assumed: backend already had `micrometer-registry-prometheus` on the
+  classpath from Phase 9 but the endpoint was still behind authentication, which would have silently
+  broken Prometheus scraping had it not been checked here. Mitigated the same way `/actuator/health`
+  already was — neither payload carries secrets, and neither service is reachable from outside its
+  own Docker network (or, in `infrastructure/terraform`, its own VPC security group).
+- **Alerting rules exist and are evaluated** (`observability/prometheus/alert-rules.yml`: service
+  down, high 5xx rate, high p95 latency, high JVM heap) but **no Alertmanager is wired to a real
+  notification target** — the same documented-gap pattern as Phase 12's CloudWatch SNS topic
+  (created, no subscription). A rule with nowhere to send its alert is still real and worth having;
+  a fake receiver that goes nowhere would not be.
+- **Verified**: both services' full lint/type/test suites pass with these changes
+  (`ruff`/`black`/`mypy`/`pytest` for ai-service, `spotless`/`mvn test` for backend, 94/99 backend
+  tests — the same 5 Testcontainers-only failures as every prior phase, this sandbox still has no
+  Docker daemon). Prometheus/Grafana config files (`prometheus.yml`, `alert-rules.yml`, Grafana
+  provisioning YAML, the dashboard JSON) are syntax-validated directly; `docker compose config`
+  resolves the whole compose file including both new services. **Not verified**: actually pulling
+  and running the `prom/prometheus`/`grafana/grafana` images — this sandbox's egress policy blocks
+  Docker Hub's blob CDN, the same limitation noted in Phase 10's verification section. Recommend
+  running `docker compose up --build` in an environment with real registry access as the first
+  verification step.

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  JSON console logging (Phase 14 observability): one log event per line, structured for
+  CloudWatch Logs / any log aggregator to parse without a regex, including the request-ID MDC
+  field RequestCorrelationFilter sets so every line from one request can be grepped together.
+-->
+<configuration>
+  <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+      <includeMdcKeyName>requestId</includeMdcKeyName>
+      <customFields>{"service":"incident-platform-backend"}</customFields>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="JSON_CONSOLE" />
+  </root>
+
+  <logger name="com.incidentplatform" level="INFO" />
+</configuration>
