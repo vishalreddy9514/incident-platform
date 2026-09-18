@@ -100,3 +100,8 @@ jobs:
           scan-ref: infrastructure/terraform
           severity: HIGH,CRITICAL
           exit-code: "1"
+          # Real findings this surfaced are fixed in the Terraform itself,
+          # not ignored - this file covers only the ones that are a genuine
+          # cost/functionality tradeoff, each with its own reasoning (see
+          # the file itself).
+          trivyignores: infrastructure/terraform/.trivyignore

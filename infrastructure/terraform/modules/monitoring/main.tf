@@ -22,6 +22,11 @@ resource "aws_cloudwatch_log_group" "frontend" {
 # (Observability & monitoring) scope, not invented early to look complete.
 resource "aws_sns_topic" "alerts" {
   name = "${local.name_prefix}-alerts"
+
+  # AWS-managed key (no extra cost, unlike a customer-managed KMS key) -
+  # still real encryption at rest for whatever ends up in an alarm message
+  # (Phase 15, Trivy AWS-0095).
+  kms_master_key_id = "alias/aws/sns"
 }
 
 resource "aws_cloudwatch_metric_alarm" "alb_5xx" {

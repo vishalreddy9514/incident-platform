@@ -21,11 +21,16 @@ resource "aws_internet_gateway" "main" {
 }
 
 resource "aws_subnet" "public" {
-  count                   = length(var.availability_zones)
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = var.public_subnet_cidrs[count.index]
-  availability_zone       = var.availability_zones[count.index]
-  map_public_ip_on_launch = true
+  count             = length(var.availability_zones)
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.public_subnet_cidrs[count.index]
+  availability_zone = var.availability_zones[count.index]
+  # Nothing launched into these subnets needs this: the ALB gets a public IP
+  # from its own `internal = false` setting regardless, and the NAT gateway
+  # uses its own explicit EIP (aws_eip.nat) - so auto-assigning one to
+  # anything else launched here has no current use, only downside
+  # (Phase 15, Trivy AWS-0164).
+  map_public_ip_on_launch = false
 
   tags = {
     Name = "${local.name_prefix}-public-${var.availability_zones[count.index]}"
@@ -236,13 +241,10 @@ resource "aws_security_group" "rds" {
     security_groups = [aws_security_group.backend.id]
   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
+  # No egress rule at all, deliberately: RDS never initiates an outbound
+  # connection to anything, only responds on connections the backend opens -
+  # AWS security groups are stateful, so those responses reach the backend
+  # regardless of egress rules (Phase 15, Trivy AWS-0104).
   tags = { Name = "${local.name_prefix}-rds-sg" }
 
   lifecycle {
@@ -263,13 +265,9 @@ resource "aws_security_group" "redis" {
     security_groups = [aws_security_group.backend.id]
   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
+  # No egress rule at all, deliberately - same reasoning as the RDS security
+  # group above: Redis never initiates outbound traffic (Phase 15, Trivy
+  # AWS-0104).
   tags = { Name = "${local.name_prefix}-redis-sg" }
 
   lifecycle {
