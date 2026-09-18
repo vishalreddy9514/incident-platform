@@ -94,7 +94,7 @@ jobs:
       # for misconfigurations (e.g. an unencrypted resource, an over-broad
       # security group), not the images built from it. Blocking on
       # HIGH/CRITICAL, matching deploy.yml's image-scan precedent.
-      - uses: aquasecurity/trivy-action@v0.28.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: config
           scan-ref: infrastructure/terraform
