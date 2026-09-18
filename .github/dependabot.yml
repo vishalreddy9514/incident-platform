@@ -1,0 +1,47 @@
+# Automated dependency-update PRs (Phase 1 §10's original plan) - the
+# proactive complement to security.yml's OWASP/pip-audit/npm-audit scans,
+# which report *current* known CVEs; this opens a PR when a newer,
+# non-vulnerable version becomes available, before a scan ever needs to
+# flag anything. Weekly, not daily - enough to stay current without
+# review fatigue on a solo project.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /backend
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: pip
+    directory: /ai-service
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /backend
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /ai-service
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: terraform
+    directory: /infrastructure/terraform/environments/dev
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -2,7 +2,7 @@
 
 An enterprise-style internal engineering service desk: users raise incidents, engineers triage and resolve them, admins manage the platform — with an optional AI-assisted analysis service (classification, summarisation, keyword extraction, suggested troubleshooting steps) sitting alongside the core workflow, not at the centre of it.
 
-> **Status: Phase 14 of 16 — Observability & monitoring.**
+> **Status: Phase 15 of 16 — Security hardening.**
 > Core auth/RBAC, incident management, dashboards, the frontend, and the AI service (wired end-to-end into the backend) are built and runnable; the whole stack now also runs with a single `docker compose up --build`. See [`docs/decisions/`](docs/decisions) for the reasoning behind key choices and the phase-by-phase build log in commit history.
 
 ## Why this project exists
@@ -209,8 +209,14 @@ Two GitHub Actions workflows (ADR-0005):
   push target from GHCR to the ECR repositories that infrastructure creates is Phase 13 — see
   [ADR-0012](docs/decisions/0012-ghcr-before-ecr.md).
 
-Known, documented gaps (not silently skipped): SonarCloud static analysis (needs an external
-project + token) and Playwright E2E (no test files exist yet — see `tests/e2e/README.md`).
+- **`.github/workflows/security.yml`** (Phase 15) — on every PR and weekly on `main`: secret
+  scanning (gitleaks), CodeQL static analysis (Java/Python/TypeScript), and a Trivy config scan of
+  the Terraform in `infrastructure/terraform`. `.github/dependabot.yml` opens a PR whenever a
+  newer, non-vulnerable dependency version exists.
+
+Known, documented gaps (not silently skipped): SonarCloud static analysis specifically (needs an
+external project + token - CodeQL above covers static analysis without needing either) and
+Playwright E2E (no test files exist yet — see `tests/e2e/README.md`).
 
 ## Infrastructure
 
@@ -222,6 +228,13 @@ here bills by the hour (roughly $50-100/month if left running), and keeping a de
 indefinitely isn't a cost a portfolio project should carry. [`docs/deployment.md`](docs/deployment.md)
 is the exact, tested runbook for provisioning it (and tearing it down again) whenever that cost is
 worth paying — one command each way, not a stub.
+
+## Security
+
+Authentication/RBAC (Phase 5), security headers + a per-threat table (Phase 15), and CI-integrated
+secret/dependency/image/IaC scanning plus static analysis (Phases 11 and 15) — see
+[`docs/security.md`](docs/security.md) for the full picture and [`SECURITY.md`](SECURITY.md) to
+report a vulnerability.
 
 ## Roadmap
 
@@ -243,7 +256,8 @@ worth paying — one command each way, not a stub.
 14. ✅ Observability & monitoring — Prometheus/Grafana via Docker Compose (self-hosted, per Phase 1
     §13), structured JSON logs + request correlation across both services, alerting rules (no
     notification target wired yet — see `observability/README.md`)
-15. ⬜ Security hardening
+15. ✅ Security hardening — threat model + security headers + CI secret/SAST/IaC scanning +
+    Dependabot — see [`docs/security.md`](docs/security.md)
 16. ⬜ Documentation & final polish
 
 ## License

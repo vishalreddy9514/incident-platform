@@ -19,6 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -96,6 +97,23 @@ public class SecurityConfig {
             ex ->
                 ex.authenticationEntryPoint(authenticationEntryPoint)
                     .accessDeniedHandler(accessDeniedHandler))
+        // Spring Security's own header defaults already cover X-Content-Type-Options,
+        // X-Frame-Options, Cache-Control, and (when the request is actually HTTPS) HSTS - these
+        // two are the ones without a sane built-in default: an API response has no reason to leak
+        // the requesting page's full URL to whatever it links to, and the JSON API this backend
+        // serves has no use for any browser feature Permissions-Policy can gate (Phase 15).
+        .headers(
+            headers ->
+                headers
+                    .referrerPolicy(
+                        rp ->
+                            rp.policy(
+                                ReferrerPolicyHeaderWriter.ReferrerPolicy
+                                    .STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                    .permissionsPolicy(
+                        pp ->
+                            pp.policy(
+                                "camera=(), microphone=(), geolocation=(), payment=(), usb=()")))
         .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(requestCorrelationFilter, RateLimitingFilter.class);
