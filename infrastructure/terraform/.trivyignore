@@ -1,0 +1,42 @@
+# Trivy config scan (.github/workflows/security.yml's iac-scan job) findings
+# accepted as documented risk, not silently suppressed - each one is also
+# recorded in docs/security.md's "Not yet built" section or an existing ADR.
+# Everything Trivy found that had no real functional/cost tradeoff was fixed
+# instead of ignored - see the comments next to drop_invalid_header_fields,
+# kms_master_key_id, map_public_ip_on_launch = false, and the RDS/Redis
+# security groups' now-absent egress blocks in infrastructure/terraform.
+
+# S3 bucket (bootstrap/main.tf) and SNS topic (modules/monitoring) are
+# already encrypted at rest (SSE-S3 / the AWS-managed SNS key respectively) -
+# these two findings specifically want a *customer-managed* KMS key instead,
+# which costs $1/month per key with no benefit for a Terraform state bucket
+# or an alarm-notification topic nobody has subscribed to yet.
+AVD-AWS-0132
+AVD-AWS-0136
+
+# ECR image_tag_mutability is MUTABLE, matching the :latest-based push
+# workflow docs/deployment.md documents today. Switching to IMMUTABLE is the
+# right long-term answer (and a natural follow-up once Phase 13's real
+# deployment work redesigns the tagging strategy around immutable SHA tags
+# instead of a repeatedly-overwritten :latest), but doing it here would
+# break that already-documented workflow without a live AWS account to
+# verify the replacement against - the same "don't change what can't be
+# tested against a real account" reasoning as the rest of Phase 12/13.
+AVD-AWS-0031
+
+# The ALB is deliberately internet-facing (it's how this app's own users
+# reach it) and, per ADR-0013, HTTP-only until a real domain exists to issue
+# a TLS certificate against - both already-documented decisions, not gaps.
+AVD-AWS-0053
+AVD-AWS-0054
+
+# Remaining broad egress (ALB, frontend, backend, ai-service security
+# groups - RDS/Redis were fixed to have no egress at all, since a database
+# never initiates outbound traffic). Precisely scoping down egress for
+# these four needs knowing exactly what each one calls outbound (AWS
+# service endpoints for ECS/CloudWatch, the AI service's real LLM provider
+# if one is ever configured, etc.) and verifying nothing breaks - not
+# something to guess at without a live account to test against, given this
+# project's deliberate decision not to spend money on one yet (see
+# docs/deployment.md's Phase 13 section).
+AVD-AWS-0104
