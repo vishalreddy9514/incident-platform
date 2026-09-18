@@ -1,12 +1,12 @@
 # API Documentation
 
-> **Status:** growing incrementally as endpoints are built. The
-> authoritative contract is the generated OpenAPI spec (springdoc, served
-> at `/v3/api-docs` and browsable at `/swagger-ui.html` once the backend
-> is running) so it can never drift from the code. This document adds
-> narrative context around it.
+> **Status:** complete for this project's scope (Phase 16) - every endpoint below matches the
+> real `@*Mapping` annotations in `backend/src/main/java/com/incidentplatform` exactly, checked
+> directly rather than assumed. The authoritative contract is still the generated OpenAPI spec
+> (springdoc, served at `/v3/api-docs` and browsable at `/swagger-ui.html` once the backend is
+> running) so it can never drift from the code - this document adds narrative context around it.
 
-## Implemented so far (Phase 8)
+## Endpoints
 
 ### Auth (public, rate-limited on login/register)
 
