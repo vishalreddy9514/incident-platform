@@ -17,6 +17,10 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN npm run build
 
 FROM nginx:1.27-alpine
+# Pulls in Alpine's own security-patched package versions at build time,
+# since the base image tag's baked-in packages lag behind by the time we
+# build (caught by the Phase 15 Trivy image scan).
+RUN apk update && apk upgrade --no-cache
 COPY --from=build /build/dist /usr/share/nginx/html
 # *.template, not conf.d/*.conf directly: the base image's own entrypoint
 # script (20-envsubst-on-templates.sh) substitutes ${API_ORIGIN} (Phase 15's
