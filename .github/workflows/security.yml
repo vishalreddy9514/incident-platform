@@ -21,7 +21,7 @@ jobs:
     name: Secret scanning (gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Downloaded directly by coordinates rather than a marketplace action -
       # gitleaks itself is fully open source (MIT) with no license gate; the
@@ -57,7 +57,7 @@ jobs:
           - language: javascript-typescript
             build-mode: none
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: github/codeql-action/init@v3
         with:
@@ -87,7 +87,7 @@ jobs:
     name: IaC misconfiguration scan (Trivy)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Same Trivy already used for image scanning in deploy.yml, pointed at
       # `scan-type: config` instead - checks the Terraform itself (Phase 12)
