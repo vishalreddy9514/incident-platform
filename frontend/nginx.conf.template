@@ -1,0 +1,38 @@
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Security headers (Phase 15). The API_ORIGIN env var below is substituted
+    # at container start (nginx's built-in envsubst-on-templates entrypoint
+    # script, hence this file being *.template rather than a plain .conf) with
+    # the backend's origin - needed because locally the frontend and backend are
+    # different origins (different ports), so connect-src 'self' alone would
+    # block every API call. Behind the single ALB this project's Terraform
+    # provisions (infrastructure/terraform, ADR-0013), frontend and backend
+    # share one origin and 'self' alone already covers it - API_ORIGIN can be
+    # left unset there.
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
+    # style-src needs 'unsafe-inline' - several components use React's
+    # style={{...}} inline-style prop, which CSP treats the same as a
+    # <style> tag. script-src stays strict (no 'unsafe-inline'/'unsafe-eval')
+    # since nothing in this app needs either - Vite's build emits external
+    # module scripts, not inline handlers.
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ${API_ORIGIN}; frame-ancestors 'none'; base-uri 'self'; object-src 'none'" always;
+
+    # SPA routing: any path not matching a real file falls back to
+    # index.html so React Router handles it client-side.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location = /healthz {
+        access_log off;
+        return 200 "ok\n";
+        add_header Content-Type text/plain;
+    }
+}

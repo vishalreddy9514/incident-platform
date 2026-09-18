@@ -18,7 +18,11 @@ RUN npm run build
 
 FROM nginx:1.27-alpine
 COPY --from=build /build/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# *.template, not conf.d/*.conf directly: the base image's own entrypoint
+# script (20-envsubst-on-templates.sh) substitutes ${API_ORIGIN} (Phase 15's
+# CSP connect-src - see the template's own comment) into conf.d at container
+# start, since that value isn't known at image-build time.
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
 EXPOSE 80
 
