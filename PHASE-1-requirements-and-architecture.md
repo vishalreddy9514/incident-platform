@@ -2,7 +2,13 @@
 
 **Project:** Cloud-Native AI Incident & Support Management Platform (`incident-platform`)
 **Phase:** 1 of 16 — Foundations
-**Status:** Draft for approval
+**Status:** Approved and built (all 16 phases complete). Kept as the original planning record,
+not updated as the build progressed - where reality diverged from the plan (and it did, in
+documented, reasoned ways: see [`docs/decisions/`](docs/decisions) for each one), the current
+authoritative picture is [`docs/architecture.md`](docs/architecture.md) for the system itself,
+[`docs/security.md`](docs/security.md), [`docs/testing.md`](docs/testing.md),
+[`docs/api.md`](docs/api.md), and [`docs/deployment.md`](docs/deployment.md) for their respective
+areas, and the root [`README.md`](README.md) for the project as it exists today.
 
 ---
 
