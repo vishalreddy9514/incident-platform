@@ -2,8 +2,8 @@
 
 An enterprise-style internal engineering service desk: users raise incidents, engineers triage and resolve them, admins manage the platform — with an optional AI-assisted analysis service (classification, summarisation, keyword extraction, suggested troubleshooting steps) sitting alongside the core workflow, not at the centre of it.
 
-> **Status: Phase 15 of 16 — Security hardening.**
-> Core auth/RBAC, incident management, dashboards, the frontend, and the AI service (wired end-to-end into the backend) are built and runnable; the whole stack now also runs with a single `docker compose up --build`. See [`docs/decisions/`](docs/decisions) for the reasoning behind key choices and the phase-by-phase build log in commit history.
+> **Status: Complete — all 16 phases built.**
+> Core auth/RBAC, incident management, dashboards, the frontend, and the AI service (wired end-to-end into the backend) are built and runnable; the whole stack runs with a single `docker compose up --build`, including Prometheus/Grafana. CI (lint, tests, dependency/image/secret/IaC scanning, static analysis) runs on every PR. Infrastructure-as-code for a real AWS deployment is written and validated, deliberately not applied to avoid ongoing cost (see [Infrastructure](#infrastructure) below). Two things are a named, final scope boundary rather than a gap: most of the frontend's own test coverage, and Playwright E2E (see [Roadmap](#roadmap)). See [`docs/decisions/`](docs/decisions) for the reasoning behind key choices and the phase-by-phase build log in commit history.
 
 ## Why this project exists
 
@@ -21,7 +21,7 @@ Built as a portfolio project to demonstrate production-oriented software enginee
 | CI/CD | GitHub Actions |
 | Observability | Spring Boot Actuator, Prometheus, Grafana, structured logging |
 
-Full technology justification: see [`PHASE-1-requirements-and-architecture.md`](PHASE-1-requirements-and-architecture.md) (superseded by `docs/architecture.md` once that's populated in a later phase).
+Full technology justification: see [`PHASE-1-requirements-and-architecture.md`](PHASE-1-requirements-and-architecture.md) (the original planning record; [`docs/architecture.md`](docs/architecture.md) is the up-to-date picture of what was actually built).
 
 ## Repository structure
 
@@ -31,13 +31,16 @@ incident-platform/
 ├── ai-service/         # Python 3.12 / FastAPI AI microservice
 ├── frontend/            # React / TypeScript / Vite dashboard
 ├── infrastructure/
-│   └── terraform/       # IaC, module-per-concern
+│   └── terraform/       # IaC, module-per-concern (bootstrap/, modules/, environments/dev/)
+├── observability/        # Prometheus scrape config + alert rules, Grafana provisioning
 ├── tests/
-│   └── e2e/              # Playwright, cross-service end-to-end tests
+│   └── e2e/              # Playwright, cross-service end-to-end tests (scope described, not built - see below)
 ├── docs/                 # Architecture, API, testing, deployment, security docs + ADRs
-├── .github/              # CI workflows, PR/issue templates
-├── docker-compose.yml    # Local development environment
-└── .env.example          # Documented environment variables (no real secrets)
+├── .github/              # CI workflows (pr.yml/deploy.yml/security.yml), Dependabot, PR/issue templates
+├── docker-compose.yml    # Local development environment (app + observability stack)
+├── .env.example          # Documented environment variables (no real secrets)
+├── .gitleaks.toml        # Secret-scanning allowlist (documented placeholders/test fixtures)
+└── SECURITY.md            # Vulnerability reporting policy
 ```
 
 ## Running everything with Docker Compose
@@ -195,7 +198,7 @@ pytest                  # unit + API tests (mock provider only — no network/AP
 
 ## CI/CD
 
-Two GitHub Actions workflows (ADR-0005):
+Three GitHub Actions workflows (ADR-0005's two-pipeline split, plus a third for scanning):
 
 - **`.github/workflows/pr.yml`** — every pull request against `main`: lint/format for all three
   services, the full backend test suite (Testcontainers-backed integration tests included — GitHub's
@@ -208,7 +211,6 @@ Two GitHub Actions workflows (ADR-0005):
   images to GHCR. Actually applying the Terraform infrastructure and switching this workflow's
   push target from GHCR to the ECR repositories that infrastructure creates is Phase 13 — see
   [ADR-0012](docs/decisions/0012-ghcr-before-ecr.md).
-
 - **`.github/workflows/security.yml`** (Phase 15) — on every PR and weekly on `main`: secret
   scanning (gitleaks), CodeQL static analysis (Java/Python/TypeScript), and a Trivy config scan of
   the Terraform in `infrastructure/terraform`. `.github/dependabot.yml` opens a PR whenever a
@@ -247,7 +249,8 @@ report a vulnerability.
 7. ✅ React/TypeScript frontend
 8. ✅ Python AI microservice
 9. 🟡 Testing hardening — see [`docs/testing.md`](docs/testing.md); backend RBAC/mapper gaps
-   and frontend auth/routing covered, most frontend pages still untested
+   and frontend auth/routing covered; most frontend pages and Playwright E2E are this project's
+   final, named scope boundary, not an open item
 10. ✅ Dockerisation
 11. ✅ CI/CD with GitHub Actions
 12. ✅ Terraform & AWS infrastructure — written and validated (`terraform fmt`/`validate` clean)
@@ -258,7 +261,14 @@ report a vulnerability.
     notification target wired yet — see `observability/README.md`)
 15. ✅ Security hardening — threat model + security headers + CI secret/SAST/IaC scanning +
     Dependabot — see [`docs/security.md`](docs/security.md)
-16. ⬜ Documentation & final polish
+16. ✅ Documentation & final polish — every doc reviewed for accuracy and consistency, stale
+    Phase-in-progress banners replaced with final status, cross-doc links verified
+
+**Project complete.** The two 🟡 items are real, working, substantially-built efforts with a
+narrow, intentional, and documented gap each — not unfinished work waiting on a phase that
+doesn't exist. See [`docs/architecture.md`](docs/architecture.md)'s final "Project summary"
+section for the honest, complete picture of what's built, what's written-but-not-applied to
+avoid cost, and what's a deliberate final scope boundary.
 
 ## License
 

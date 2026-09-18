@@ -2,7 +2,9 @@
 
 Full strategy as originally planned: see
 [`PHASE-1-requirements-and-architecture.md`](../PHASE-1-requirements-and-architecture.md) §11.
-This document tracks what's actually built, updated through Phase 9.
+This document tracks what's actually built - final as of Phase 16 (Phase 9 was the last phase
+to substantially change test coverage; the frontend gap below is this project's one deliberate,
+permanent scope boundary, not an open item waiting on a phase that doesn't exist).
 
 ## Coverage target
 
@@ -71,10 +73,13 @@ The largest gap: **13.88%** statement coverage. Before Phase 9, only two files h
 - `useCategories.test.tsx` — one hook, as a pattern for testing the rest: a TanStack Query hook
   against an MSW-mocked backend, success and error states, plus a mutation.
 
-**Still untested, and the natural next increment**: all 7 pages (`AdminPage`,
-`CreateIncidentPage`, `DashboardPage`, `IncidentDetailPage`, `IncidentListPage`, `LoginPage`,
-`RegisterPage`), `Layout.tsx`, `States.tsx`, `AuthContext.tsx` itself (only exercised indirectly
-through `ProtectedRoute.test.tsx`'s mock), and the other three hooks (`useIncidents`, `useTeams`,
-`useUsers`). This is real, known-remaining scope, not an oversight — Phase 9 prioritised the
-security/routing-relevant pieces (auth state, route guarding) and backend RBAC/mapper gaps over
-exhaustively covering every page in one pass.
+**Still untested**: all 7 pages (`AdminPage`, `CreateIncidentPage`, `DashboardPage`,
+`IncidentDetailPage`, `IncidentListPage`, `LoginPage`, `RegisterPage`), `Layout.tsx`,
+`States.tsx`, `AuthContext.tsx` itself (only exercised indirectly through
+`ProtectedRoute.test.tsx`'s mock), and the other three hooks (`useIncidents`, `useTeams`,
+`useUsers`). This project's final, deliberate scope boundary, not an oversight - Phase 9
+prioritised the security/routing-relevant pieces (auth state, route guarding) and backend
+RBAC/mapper gaps over exhaustively covering every page, and with the roadmap now complete
+(Phase 16), that's where it stays: real functionality this project doesn't claim to have proven
+with a test, named specifically rather than left implicit. Playwright E2E (`tests/e2e/`) has the
+same status - a described scope with no test files behind it yet, honestly, not silently.

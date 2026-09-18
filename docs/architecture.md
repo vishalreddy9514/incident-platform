@@ -1,11 +1,25 @@
 # Architecture
 
-> **Status:** partially populated. Layered backend architecture (Phase 4)
-> and AWS architecture diagram (Phase 12-13) still to come.
->
-> For the current full architectural picture beyond what's below, see
-> [`PHASE-1-requirements-and-architecture.md`](../PHASE-1-requirements-and-architecture.md)
-> at the repository root (§6-§9).
+> **Status:** complete (Phase 16, final). Each section below documents what was actually built
+> in its phase - including findings only discoverable by running things for real, and every
+> place the build diverged from [`PHASE-1-requirements-and-architecture.md`](../PHASE-1-requirements-and-architecture.md)'s
+> original plan, with the reasoning either inline or in a linked ADR.
+
+## Contents
+
+- [Database schema (Phase 3)](#database-schema-phase-3)
+- [Backend structure (Phase 4)](#backend-structure-phase-4)
+- [Authentication & authorisation (Phase 5)](#authentication--authorisation-phase-5)
+- [Incident management (Phase 6)](#incident-management-phase-6)
+- [Frontend (Phase 7)](#frontend-phase-7)
+- [AI service (Phase 8)](#ai-service-phase-8)
+- [Dockerisation (Phase 10)](#dockerisation-phase-10)
+- [CI/CD (Phase 11)](#cicd-phase-11)
+- [Terraform & AWS infrastructure (Phase 12)](#terraform--aws-infrastructure-phase-12)
+- [Cloud deployment (Phase 13)](#cloud-deployment-phase-13)
+- [Observability & monitoring (Phase 14)](#observability--monitoring-phase-14)
+- [Security hardening (Phase 15)](#security-hardening-phase-15)
+- [Project summary (Phase 16)](#project-summary-phase-16)
 
 ## Database schema (Phase 3)
 
@@ -696,3 +710,35 @@ management, and the CI scanning below). Summary of what's new this phase:
   planned "Dependabot" line item, not yet built until now.
 - **Threat model**: a concrete per-threat table in `docs/security.md`, not just a features list -
   each row names the actual mitigation and where it lives in this codebase.
+
+## Project summary (Phase 16)
+
+All 16 phases on the roadmap are built, tested where a real environment allowed it, and
+documented against what actually happened, not what was planned - the two aren't always the
+same, and every place they diverged has a reason recorded either inline or as an ADR (14 of
+them, [`docs/decisions/`](decisions)).
+
+**What's real and running**: a Java/Spring Boot backend, a Python/FastAPI AI microservice, and a
+React/TypeScript frontend, wired together and runnable end-to-end with a single
+`docker compose up --build` - Postgres, Redis, all three services, Prometheus, and Grafana.
+JWT auth with rotating refresh tokens, explicit per-action RBAC plus service-layer ownership
+checks, rate limiting, structured JSON logging with cross-service request correlation, and a
+CI pipeline (`pr.yml`, `deploy.yml`, `security.yml`) that lints, tests, scans (dependencies,
+container images, secrets, static analysis, infrastructure-as-code), and would push/deploy
+images for real given a target to push to.
+
+**What's written but deliberately not spending money**: the full Terraform stack
+(`infrastructure/terraform`) - VPC, ECS Fargate, RDS, ElastiCache, an ALB, ECR, IAM (including a
+GitHub OIDC deploy role), Secrets Manager - is `terraform validate`-clean and one command away
+from a real AWS deployment, per `docs/deployment.md`'s tested runbook. It was never actually
+applied: every resource there bills by the hour, and keeping a demo environment running
+indefinitely isn't a cost this portfolio project needs to carry to prove the skill. TLS is the
+one piece that's genuinely blocked rather than deferred by choice - it needs a real domain to
+issue a certificate against, which doesn't exist yet (ADR-0013).
+
+**What's a named, final scope boundary, not an oversight**: SonarCloud (needs an external
+account CodeQL doesn't), Playwright E2E and most of the frontend's own unit test coverage (see
+`docs/testing.md`), Alertmanager routing for the Prometheus alerts that already exist and
+evaluate correctly, and a WAF/MFA (out of scope for this project's size from Phase 1 onward).
+None of these are silently missing - each is named in the doc for the area it belongs to, with
+the reasoning for why it stops there.

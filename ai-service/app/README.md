@@ -1,14 +1,16 @@
-# AI service application code (Phase 8)
+# AI service application code
 
 FastAPI app implementing the internal analysis endpoint from
-`PHASE-1-requirements-and-architecture.md` §9.2.
+`PHASE-1-requirements-and-architecture.md` §9.2 (Phase 8), plus observability (Phase 14).
 
 ```
 app/
-  main.py               FastAPI app instance, router registration
+  main.py               FastAPI app instance, router registration, Prometheus instrumentation
   config.py             Settings (pydantic-settings), env-var backed
   schemas.py            AnalyseRequest/AnalyseResponse/HealthResponse (camelCase on the wire)
   security.py           Shared internal-token auth dependency
+  logging_config.py     JSON console logging + the request-ID contextvar (Phase 14)
+  middleware.py         Reads/echoes X-Request-Id, feeding logging_config's contextvar (Phase 14)
   routers/analyse.py    POST /internal/v1/analyse, GET /internal/v1/health
   providers/
     base.py             AnalysisProvider abstraction
@@ -17,6 +19,9 @@ app/
     factory.py           Selects a provider from Settings.llm_provider
     errors.py           AnalysisProviderError -> mapped to HTTP 502 by the router
 ```
+
+`GET /metrics` (Prometheus text format, via `prometheus-fastapi-instrumentator`) is also exposed
+by `main.py` - see `observability/README.md` at the repository root for how it's scraped.
 
 See ADR-0001 (why this is a separate service) and ADR-0011 (why the
 provider is a runtime-selectable abstraction rather than one hard-coded
