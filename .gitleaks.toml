@@ -1,0 +1,19 @@
+# gitleaks config (.github/workflows/security.yml's secret-scan job).
+# Extends the tool's own default ruleset - this file only adds an
+# allowlist for values that trip a rule but are never real secrets:
+# documented placeholders (this project's own "change-me-*" convention,
+# used consistently across .env.example, README examples, and Terraform
+# variable defaults/descriptions) and test-fixture literals (a JWT signing
+# key a unit test signs/verifies its own tokens with, never used outside
+# that test's JVM).
+
+[extend]
+useDefault = true
+
+[allowlist]
+regexes = ['''change-me[a-zA-Z0-9_-]*''']
+paths = [
+  '''backend/src/test/.*''',
+  '''ai-service/tests/.*''',
+  '''frontend/(src|tests)/.*\.test\..*''',
+]

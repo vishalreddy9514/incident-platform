@@ -520,9 +520,10 @@ Two workflows, per ADR-0005's two-pipeline split:
   GitHub-hosted run is the real verification, though — checked via the
   pull request these changes went through, not asserted from the YAML
   alone.
-- **Documented, not hidden, gaps**: SonarCloud static analysis (Phase 1
+- **Documented, not hidden, gaps**: SonarCloud static analysis specifically (Phase 1
   §12 step 8) needs an external SonarCloud project and a `SONAR_TOKEN`
-  secret, neither of which exist; Playwright E2E (step 10) has no actual
+  secret, neither of which exist - CodeQL (`.github/workflows/security.yml`, Phase 15) covers
+  static analysis itself without needing either; Playwright E2E (step 10) has no actual
   test files yet, only `tests/e2e/README.md`'s description of what it
   will eventually cover. Both are called out explicitly in `pr.yml`'s
   own comments and `docs/testing.md`, not silently skipped.
@@ -656,3 +657,31 @@ richer application dashboards, at zero AWS cost since it's entirely local contai
   Docker Hub's blob CDN, the same limitation noted in Phase 10's verification section. Recommend
   running `docker compose up --build` in an environment with real registry access as the first
   verification step.
+
+## Security hardening (Phase 15)
+
+Full write-up: [`docs/security.md`](security.md) (threat model, security headers, secrets
+management, and the CI scanning below). Summary of what's new this phase:
+
+- **Security headers**: Spring Security's `headers()` DSL (`referrerPolicy`, `permissionsPolicy`)
+  on the backend; explicit `add_header` directives plus a full `Content-Security-Policy` on the
+  frontend (`nginx.conf.template`). A real wrinkle worth recording: the frontend and backend are
+  different origins locally (different ports) but the same origin once deployed behind the single
+  ALB Phase 12's Terraform provisions - so the CSP's `connect-src` can't be a fixed value baked
+  into the image. Solved with nginx's built-in template-and-envsubst startup mechanism (the file
+  is `nginx.conf.template`, substituted into `conf.d` at container start using an `API_ORIGIN` env
+  var), not a custom entrypoint script - verified by running `envsubst` against the template
+  directly with the variable both set and unset, matching what the container actually does at
+  startup.
+- **`.github/workflows/security.yml`** (new, separate from `pr.yml`/`deploy.yml` per ADR-0005's
+  split - this one needs `security-events: write`, which neither of those should ever carry):
+  secret scanning (gitleaks, downloaded directly by coordinates rather than the licensed wrapper
+  action - verified locally against this actual repository, which required adding
+  `.gitleaks.toml` to allowlist the project's own `change-me-*` placeholder convention and test
+  fixtures after a first real run flagged both as false positives), CodeQL across Java/Python/
+  TypeScript, and a Trivy config scan of `infrastructure/terraform`.
+- **`.github/dependabot.yml`** (new): weekly update PRs for every ecosystem in this repo (Maven,
+  pip, npm, each Dockerfile, Terraform providers, GitHub Actions) - Phase 1 §10's originally
+  planned "Dependabot" line item, not yet built until now.
+- **Threat model**: a concrete per-threat table in `docs/security.md`, not just a features list -
+  each row names the actual mitigation and where it lives in this codebase.
