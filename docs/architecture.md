@@ -679,7 +679,18 @@ management, and the CI scanning below). Summary of what's new this phase:
   action - verified locally against this actual repository, which required adding
   `.gitleaks.toml` to allowlist the project's own `change-me-*` placeholder convention and test
   fixtures after a first real run flagged both as false positives), CodeQL across Java/Python/
-  TypeScript, and a Trivy config scan of `infrastructure/terraform`.
+  TypeScript, and a Trivy config scan of `infrastructure/terraform`. This job also caught two real
+  bugs neither `terraform validate` nor `actionlint` could: `aquasecurity/trivy-action@0.28.0`
+  doesn't resolve (missing the `v` every tag actually has - already-latent in `deploy.yml`, which
+  had never actually run), and `v0.28.0` itself pins a now-deleted `aquasecurity/setup-trivy` tag
+  internally, fixed by bumping to `v0.36.0` (confirmed by cloning both actions directly and
+  diffing their real tags/action.yaml). Once the job could actually run, it found 15 genuine
+  Terraform misconfigurations on the first real pass - 4 were outright fixed (ALB invalid-header
+  dropping, SNS/no-cost-KMS encryption, no public IPs on the public subnets, and RDS/Redis
+  security groups losing their egress rule entirely, since a database never initiates outbound
+  traffic); the rest are accepted and reasoned through individually in
+  `infrastructure/terraform/.trivyignore`, verified against this exact ignorefile locally with the
+  same trivy binary and flags the workflow uses before pushing.
 - **`.github/dependabot.yml`** (new): weekly update PRs for every ecosystem in this repo (Maven,
   pip, npm, each Dockerfile, Terraform providers, GitHub Actions) - Phase 1 §10's originally
   planned "Dependabot" line item, not yet built until now.

@@ -9,6 +9,12 @@ resource "aws_lb" "main" {
   security_groups    = [var.security_group_id]
   subnets            = var.public_subnet_ids
 
+  # Drops any request header that doesn't conform to RFC 7230 rather than
+  # forwarding it on - closes off a class of request-smuggling/header-
+  # injection tricks that rely on a malformed header slipping through
+  # (Phase 15, Trivy AWS-0052).
+  drop_invalid_header_fields = true
+
   tags = { Name = "${local.name_prefix}-alb" }
 }
 
