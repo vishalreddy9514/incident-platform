@@ -3,6 +3,8 @@ package com.incidentplatform.ai;
 import com.incidentplatform.ai.dto.AiAnalysisResult;
 import com.incidentplatform.ai.dto.AnalyseIncidentRequest;
 import com.incidentplatform.common.exception.ApiException;
+import com.incidentplatform.observability.RequestCorrelationFilter;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -43,14 +45,19 @@ class AiAnalysisClient {
 
   AiAnalysisResult analyse(AnalyseIncidentRequest request) {
     try {
-      return restClient
-          .post()
-          .uri("/internal/v1/analyse")
-          .contentType(MediaType.APPLICATION_JSON)
-          .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-          .body(request)
-          .retrieve()
-          .body(AiAnalysisResult.class);
+      // Forwards the same request ID RequestCorrelationFilter put in this thread's MDC, so one
+      // incident's AI-analysis request can be traced across both services' JSON logs (Phase 14).
+      String requestId = MDC.get(RequestCorrelationFilter.MDC_KEY);
+      RestClient.RequestBodySpec spec =
+          restClient
+              .post()
+              .uri("/internal/v1/analyse")
+              .contentType(MediaType.APPLICATION_JSON)
+              .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+      if (requestId != null) {
+        spec = spec.header(RequestCorrelationFilter.REQUEST_ID_HEADER, requestId);
+      }
+      return spec.body(request).retrieve().body(AiAnalysisResult.class);
     } catch (RestClientException ex) {
       throw new ApiException(
           HttpStatus.SERVICE_UNAVAILABLE,

@@ -4,6 +4,7 @@ uvicorn[standard]==0.31.0
 pydantic==2.9.2
 pydantic-settings==2.5.2
 httpx==0.27.2
+prometheus-fastapi-instrumentator==7.1.0
 
 # Dev / test / lint (kept in the same file for a project this size;
 # a requirements-dev.txt split is a reasonable future improvement if

@@ -2,7 +2,7 @@
 
 An enterprise-style internal engineering service desk: users raise incidents, engineers triage and resolve them, admins manage the platform — with an optional AI-assisted analysis service (classification, summarisation, keyword extraction, suggested troubleshooting steps) sitting alongside the core workflow, not at the centre of it.
 
-> **Status: Phase 13 of 16 — Cloud deployment (infrastructure/deploy-auth ready; live apply deliberately deferred — see below).**
+> **Status: Phase 14 of 16 — Observability & monitoring.**
 > Core auth/RBAC, incident management, dashboards, the frontend, and the AI service (wired end-to-end into the backend) are built and runnable; the whole stack now also runs with a single `docker compose up --build`. See [`docs/decisions/`](docs/decisions) for the reasoning behind key choices and the phase-by-phase build log in commit history.
 
 ## Why this project exists
@@ -42,7 +42,8 @@ incident-platform/
 
 ## Running everything with Docker Compose
 
-The whole stack — Postgres, Redis, backend, ai-service, frontend — runs with one command:
+The whole stack — Postgres, Redis, backend, ai-service, frontend, Prometheus, Grafana — runs with
+one command:
 
 ```bash
 cp .env.example .env
@@ -52,6 +53,8 @@ docker compose up --build
 - Frontend: `http://localhost:5173` (nginx serving the production build)
 - Backend: `http://localhost:8080` (Flyway applies migrations on startup)
 - AI service: `http://localhost:8000`
+- Prometheus: `http://localhost:9090` · Grafana: `http://localhost:3000` (see
+  [`observability/README.md`](observability/README.md) — dashboards/datasource are auto-provisioned)
 
 Each service has its own multi-stage `Dockerfile` (compiled/built in one stage, run from a
 minimal runtime image in the next — no build toolchain ships in the final image) and a
@@ -237,7 +240,9 @@ worth paying — one command each way, not a stub.
 12. ✅ Terraform & AWS infrastructure — written and validated (`terraform fmt`/`validate` clean)
 13. 🟡 Cloud deployment — infra + GitHub OIDC deploy auth ready (ADR-0014); a live `terraform apply`
     is deliberately not run to avoid ongoing AWS cost (see `docs/deployment.md`)
-14. ⬜ Observability & monitoring
+14. ✅ Observability & monitoring — Prometheus/Grafana via Docker Compose (self-hosted, per Phase 1
+    §13), structured JSON logs + request correlation across both services, alerting rules (no
+    notification target wired yet — see `observability/README.md`)
 15. ⬜ Security hardening
 16. ⬜ Documentation & final polish
 
