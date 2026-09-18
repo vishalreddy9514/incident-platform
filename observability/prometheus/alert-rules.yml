@@ -1,0 +1,92 @@
+# Alerting rules, evaluated by Prometheus itself and visible under its own
+# "Alerts" UI (http://localhost:9090/alerts) regardless of whether anything
+# is subscribed to act on them. No Alertmanager is wired up (no real
+# notification target - Slack/email/PagerDuty - is configured for this
+# portfolio project), the same documented-gap pattern as the CloudWatch SNS
+# topic in infrastructure/terraform/modules/monitoring: the rules are real
+# and demonstrably evaluated, routing them to a person is deliberately
+# deferred rather than faked with a receiver that goes nowhere.
+
+groups:
+  - name: service-availability
+    rules:
+      - alert: BackendDown
+        expr: up{job="backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend target is down"
+          description: "Prometheus has not been able to scrape the backend for 1 minute."
+
+      - alert: AiServiceDown
+        expr: up{job="ai-service"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI service target is down"
+          description: "Prometheus has not been able to scrape the AI service for 1 minute. Incident CRUD/RBAC is unaffected (FR-15) - only AI analysis is."
+
+  - name: backend-performance
+    rules:
+      - alert: BackendHighErrorRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count{job="backend",outcome="SERVER_ERROR"}[5m]))
+            /
+          sum(rate(http_server_requests_seconds_count{job="backend"}[5m]))
+          > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend 5xx rate above 5%"
+          description: "More than 5% of backend requests have returned a 5xx over the last 5 minutes."
+
+      - alert: BackendHighLatencyP95
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job="backend"}[5m])) by (le))
+          > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backend p95 latency above 1s"
+          description: "95th percentile backend request latency has been above 1 second for 5 minutes."
+
+      - alert: BackendHighJvmHeapUsage
+        expr: |
+          jvm_memory_used_bytes{job="backend",area="heap"} / jvm_memory_max_bytes{job="backend",area="heap"}
+          > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backend JVM heap usage above 90%"
+          description: "Backend heap usage has been above 90% of its max for 5 minutes."
+
+  - name: ai-service-performance
+    rules:
+      - alert: AiServiceHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{job="ai-service",status="5xx"}[5m]))
+            /
+          sum(rate(http_requests_total{job="ai-service"}[5m]))
+          > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI service 5xx rate above 5%"
+          description: "More than 5% of AI-service requests have returned a 5xx over the last 5 minutes - usually an upstream LLM provider issue (ADR-0011)."
+
+      - alert: AiServiceHighLatencyP95
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="ai-service"}[5m])) by (le))
+          > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI service p95 latency above 2s"
+          description: "95th percentile AI-service request latency has been above 2 seconds for 5 minutes."

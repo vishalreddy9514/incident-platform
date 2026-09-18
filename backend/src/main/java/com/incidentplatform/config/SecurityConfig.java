@@ -1,5 +1,6 @@
 package com.incidentplatform.config;
 
+import com.incidentplatform.observability.RequestCorrelationFilter;
 import com.incidentplatform.security.JwtAuthenticationFilter;
 import com.incidentplatform.security.RateLimitingFilter;
 import com.incidentplatform.security.RestAccessDeniedHandler;
@@ -35,16 +36,19 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+  private final RequestCorrelationFilter requestCorrelationFilter;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final RateLimitingFilter rateLimitingFilter;
   private final RestAuthenticationEntryPoint authenticationEntryPoint;
   private final RestAccessDeniedHandler accessDeniedHandler;
 
   public SecurityConfig(
+      RequestCorrelationFilter requestCorrelationFilter,
       JwtAuthenticationFilter jwtAuthenticationFilter,
       RateLimitingFilter rateLimitingFilter,
       RestAuthenticationEntryPoint authenticationEntryPoint,
       RestAccessDeniedHandler accessDeniedHandler) {
+    this.requestCorrelationFilter = requestCorrelationFilter;
     this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     this.rateLimitingFilter = rateLimitingFilter;
     this.authenticationEntryPoint = authenticationEntryPoint;
@@ -78,7 +82,11 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers("/api/v1/auth/**")
                     .permitAll()
-                    .requestMatchers("/actuator/health", "/actuator/info")
+                    // /actuator/prometheus is unauthenticated so Prometheus can scrape it - it
+                    // carries no secrets, only counters/histograms, and (docker-compose.yml,
+                    // modules/networking's security groups) it's never reachable from outside
+                    // the backend's own network in the first place.
+                    .requestMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus")
                     .permitAll()
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
                     .permitAll()
@@ -89,7 +97,8 @@ public class SecurityConfig {
                 ex.authenticationEntryPoint(authenticationEntryPoint)
                     .accessDeniedHandler(accessDeniedHandler))
         .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterBefore(requestCorrelationFilter, RateLimitingFilter.class);
     return http.build();
   }
 }
