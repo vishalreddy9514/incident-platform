@@ -16,7 +16,7 @@ ARG VITE_API_BASE_URL=http://localhost:8080/api/v1
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN npm run build
 
-FROM nginx:1.27-alpine
+FROM nginx:1.29-alpine
 COPY --from=build /build/dist /usr/share/nginx/html
 # *.template, not conf.d/*.conf directly: the base image's own entrypoint
 # script (20-envsubst-on-templates.sh) substitutes ${API_ORIGIN} (Phase 15's

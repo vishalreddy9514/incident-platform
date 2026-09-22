@@ -9,6 +9,8 @@ An enterprise-style internal engineering service desk: users raise incidents, en
 
 Built as a portfolio project to demonstrate production-oriented software engineering practice for UK graduate/junior engineering roles: clean layered architecture, a real (small) microservice split, infrastructure as code, CI/CD, automated testing at every layer, and observability — with AI integrated as a supporting feature rather than the whole point.
 
+Built with AI assistance (Claude Code) as a pair programmer. The scope, the architecture and the technology choices are mine, every change was reviewed before it landed, and the reasoning behind the significant decisions is recorded in [`docs/decisions/`](docs/decisions).
+
 ## Technology stack
 
 | Layer | Stack |
