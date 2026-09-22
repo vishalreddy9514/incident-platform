@@ -1,0 +1,10 @@
+# Dev, test and lint tooling. Installed in CI and locally, never in the
+# runtime image — see requirements.txt's header.
+-r requirements.txt
+
+pytest==8.3.3
+pytest-asyncio==0.24.0
+pytest-cov==5.0.0
+ruff==0.6.9
+black==26.5.1
+mypy==1.11.2

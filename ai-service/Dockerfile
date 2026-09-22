@@ -1,9 +1,10 @@
 FROM python:3.12-slim
 WORKDIR /app
 
-# Dependency layer cached separately from app code. requirements.txt keeps
-# runtime and dev/test/lint tooling together for a project this size (see
-# its own header comment) — installed as-is rather than splitting it here.
+# Dependency layer cached separately from app code. requirements.txt is
+# runtime-only; the dev/test/lint tooling in requirements-dev.txt is
+# deliberately not copied or installed here, so the production image ships
+# neither those tools nor their CVEs.
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
