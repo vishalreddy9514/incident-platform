@@ -4,44 +4,74 @@
 # non-vulnerable version becomes available, before a scan ever needs to
 # flag anything. Weekly, not daily - enough to stay current without
 # review fatigue on a solo project.
+#
+# Every ecosystem groups its updates into a single PR. Ungrouped, a weekly
+# run across eight ecosystems opened two dozen one-line PRs that were never
+# going to be reviewed individually; grouped, each ecosystem produces one
+# reviewable PR whose CI run actually means something, and the open-PR list
+# stays short enough to act on.
 version: 2
 updates:
   - package-ecosystem: maven
     directory: /backend
     schedule:
       interval: weekly
+    groups:
+      backend-maven:
+        patterns: ["*"]
 
   - package-ecosystem: pip
     directory: /ai-service
     schedule:
       interval: weekly
+    groups:
+      ai-service-pip:
+        patterns: ["*"]
 
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
+    groups:
+      frontend-npm:
+        patterns: ["*"]
 
   - package-ecosystem: docker
     directory: /backend
     schedule:
       interval: weekly
+    groups:
+      backend-docker:
+        patterns: ["*"]
 
   - package-ecosystem: docker
     directory: /ai-service
     schedule:
       interval: weekly
+    groups:
+      ai-service-docker:
+        patterns: ["*"]
 
   - package-ecosystem: docker
     directory: /frontend
     schedule:
       interval: weekly
+    groups:
+      frontend-docker:
+        patterns: ["*"]
 
   - package-ecosystem: terraform
     directory: /infrastructure/terraform/environments/dev
     schedule:
       interval: weekly
+    groups:
+      terraform:
+        patterns: ["*"]
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]

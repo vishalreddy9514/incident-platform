@@ -1,7 +1,7 @@
 # Multi-stage build: compile the static bundle with Node, serve it with
 # nginx — no Node runtime ships in the final image.
 
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /build
 
 COPY package.json package-lock.json ./

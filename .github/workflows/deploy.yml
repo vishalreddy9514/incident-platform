@@ -35,7 +35,7 @@ jobs:
       matrix:
         service: [backend, ai-service, frontend]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: docker/setup-buildx-action@v3
 
@@ -47,7 +47,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build ${{ matrix.service }} image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.service }}
           push: false
@@ -65,7 +65,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Push ${{ matrix.service }} image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.service }}
           push: true
