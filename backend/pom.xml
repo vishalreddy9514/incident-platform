@@ -28,6 +28,15 @@
          deploy image scan flags CVE-2026-54291 (SCRAM-SHA-256-PLUS downgrade
          defeating man-in-the-middle protection), whose fix landed in 42.7.12. -->
     <postgresql.version>42.7.13</postgresql.version>
+    <!-- Both override what Spring Boot 3.5.16 manages, because advisories
+         landed after its release and the deploy image scan blocks on them:
+         Tomcat 10.1.55 -> 10.1.60 for the security-constraint, DIGEST and
+         FORM authentication bypasses (CVE-2026-65182 / -65905 / -68525),
+         and Netty 4.1.135 -> 4.1.137 for CVE-2026-75595 (CRITICAL, SNI
+         routing bypass). Both are patch bumps within the line Boot already
+         uses, and both revert to Boot's own value once it catches up. -->
+    <tomcat.version>10.1.60</tomcat.version>
+    <netty.version>4.1.137.Final</netty.version>
   </properties>
 
   <dependencies>
