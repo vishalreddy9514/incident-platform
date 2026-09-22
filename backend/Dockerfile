@@ -24,6 +24,12 @@ RUN mvn -q -B -DskipTests clean package
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
+# Same reasoning as frontend/Dockerfile: the base image lags Alpine's
+# security updates, and the deploy scan blocks on fixable HIGH/CRITICAL
+# findings. Applied here too so this image does not fail the same way the
+# moment an Alpine advisory lands, rather than waiting to find out.
+RUN apk --no-cache upgrade
+
 # Runs as a non-root user rather than the image's default root (Phase 1 §10
 # treats least-privilege as a design-in, not a retrofit).
 RUN addgroup -S app && adduser -S app -G app

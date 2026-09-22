@@ -17,6 +17,17 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN npm run build
 
 FROM nginx:1.29-alpine
+
+# Alpine publishes package security fixes continuously, and the official
+# nginx image is only rebuilt periodically, so even a current tag ships
+# packages that already have fixes upstream — which is exactly what the
+# deploy pipeline's scan blocks on (HIGH/CRITICAL, fixes available). This
+# pulls those fixes in at build time instead of waiting on the base image.
+# The trade-off is deliberate: the same Dockerfile can produce different
+# package versions on different days, which is the cost of not shipping a
+# knowingly vulnerable image.
+RUN apk --no-cache upgrade
+
 COPY --from=build /build/dist /usr/share/nginx/html
 # *.template, not conf.d/*.conf directly: the base image's own entrypoint
 # script (20-envsubst-on-templates.sh) substitutes ${API_ORIGIN} (Phase 15's

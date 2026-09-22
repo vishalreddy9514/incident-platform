@@ -32,6 +32,11 @@ jobs:
       contents: read
       packages: write
     strategy:
+      # Without this, the first service whose scan fails cancels the other
+      # two mid-build, so a run reports one finding and hides whatever the
+      # other images would have said. For a security gate that is the wrong
+      # trade: one run should report every image's findings at once.
+      fail-fast: false
       matrix:
         service: [backend, ai-service, frontend]
     steps:
