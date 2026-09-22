@@ -1,7 +1,7 @@
 # Multi-stage build: compile the static bundle with Node, serve it with
 # nginx — no Node runtime ships in the final image.
 
-FROM node:22-alpine AS build
+FROM node:25-alpine AS build
 WORKDIR /build
 
 COPY package.json package-lock.json ./
@@ -16,7 +16,7 @@ ARG VITE_API_BASE_URL=http://localhost:8080/api/v1
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN npm run build
 
-FROM nginx:1.29-alpine
+FROM nginx:1.31-alpine
 
 # Alpine publishes package security fixes continuously, and the official
 # nginx image is only rebuilt periodically, so even a current tag ships
