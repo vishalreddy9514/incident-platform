@@ -4,10 +4,10 @@
 # CVEs, which were failing the deploy pipeline's image scan for code that
 # never runs in production (CVE-2026-32274 in black).
 fastapi==0.141.1
-uvicorn[standard]==0.31.0
-pydantic==2.9.2
-pydantic-settings==2.5.2
-httpx==0.27.2
+uvicorn[standard]==0.53.0
+pydantic==2.13.5
+pydantic-settings==2.15.0
+httpx==0.28.1
 prometheus-fastapi-instrumentator==8.1.0
 
 # Transitive via fastapi and the instrumentator, pinned here on purpose:
