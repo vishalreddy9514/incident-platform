@@ -2,7 +2,7 @@
 # minimal JRE-only image so the shipped artifact is just the jar and its
 # runtime, not a build environment.
 
-FROM eclipse-temurin:21-jdk-alpine AS build
+FROM eclipse-temurin:25-jdk-alpine AS build
 WORKDIR /build
 
 # Maven wrapper isn't checked in (see pom.xml/README) — use the same Maven
@@ -21,7 +21,7 @@ COPY src ./src
 # on formatting alone.
 RUN mvn -q -B -DskipTests clean package
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 
 # Same reasoning as frontend/Dockerfile: the base image lags Alpine's
